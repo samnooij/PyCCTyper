@@ -2,10 +2,11 @@ import os
 import sys
 import re
 
+
 class RepeatTyper(object):
 
     def __init__(self, args):
-       
+
         self.input = args.input
         self.db = args.db
         self.threads = 1
@@ -13,19 +14,19 @@ class RepeatTyper(object):
 
         # Check databases
         self.check_db()
-       
+
         # Read input
         self.read_input()
 
     def check_db(self):
-        
-        if self.db == '':
+
+        if self.db == "":
             try:
-                DB_PATH = os.environ['CCTYPER_DB']
-                self.xgb = os.path.join(DB_PATH, 'xgb_repeats.model')
-                self.typedict = os.path.join(DB_PATH, 'type_dict.tab')
+                DB_PATH = os.environ["CCTYPER_DB"]
+                self.xgb = os.path.join(DB_PATH, "xgb_repeats.model")
+                self.typedict = os.path.join(DB_PATH, "type_dict.tab")
             except:
-                print('Could not find database directory')
+                print("Could not find database directory")
                 sys.exit()
 
         else:
@@ -33,9 +34,9 @@ class RepeatTyper(object):
             self.typedict = os.path.join(self.db, "type_dict.tab")
 
     def read_input(self):
-        
+
         # Load input:
-        with open(self.input, 'r') as f:
+        with open(self.input, "r") as f:
             self.repeats = [ll.rstrip() for ll in f]
 
         # Check input
@@ -45,6 +46,6 @@ class RepeatTyper(object):
 
         for rep in self.repeats:
             if not is_dna(rep):
-                print('Error - Non-DNA letters found in sequence:')
+                print("Error - Non-DNA letters found in sequence:")
                 print(rep)
                 sys.exit()

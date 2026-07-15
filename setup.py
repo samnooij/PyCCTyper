@@ -4,7 +4,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="cctyper", 
+    name="cctyper",
     version="1.8.0",
     author="Jakob Russel",
     author_email="russel2620@gmail.com",
@@ -20,8 +20,9 @@ setuptools.setup(
         "Operating System :: OS Independent",
         "Topic :: Scientific/Engineering :: Bio-Informatics",
         "Topic :: Software Development :: Libraries :: Python Modules",
-        "Development Status :: 4 - Beta"],
-    python_requires='>=3.8',
+        "Development Status :: 4 - Beta",
+    ],
+    python_requires=">=3.8",
     install_requires=[
         "numpy >= 1.17.5",
         "pandas >= 1.3",
@@ -32,8 +33,7 @@ setuptools.setup(
         "xgboost >= 1.4",
         "tqdm >= 4",
         "drawSvg >= 1.8.0",
-        "setuptools"],
-    scripts=['bin/cctyper',
-             'bin/repeatType',
-             'bin/repeatTrain']
+        "setuptools",
+    ],
+    scripts=["bin/cctyper", "bin/repeatType", "bin/repeatTrain"],
 )
