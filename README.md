@@ -1,6 +1,132 @@
 [![Project Status: Active - The project has reached a stable, usable state and is being actively developed.](http://www.repostatus.org/badges/latest/active.svg)](http://www.repostatus.org/#active)
 [![Conda](https://anaconda.org/russel88/cctyper/badges/installer/conda.svg)](https://anaconda.org/russel88/cctyper) [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
+# PyCCTyper
+
+Fork of [CCTyper](https://github.com/Russel88/CRISPRCasTyper), a tool
+to predict CRISPR arrays and _cas_ genes in bacterial genome sequences.
+This fork aims to replace the core depencencies of CCTyper with more
+efficient reimplementations to reduce waiting times 🕰️⬇️ and energy use 🔌🌳.
+
+The main tools that are replaced are:
+
+| **Original** | **Replacement**                                       |
+| ------------ | ----------------------------------------------------- |
+| Prodigal     | [Pyrodigal](https://pyrodigal.readthedocs.io/)        |
+| HMMer        | [PyHMMER](https://pyhmmer.readthedocs.io/en/stable/)  |
+| MinCED       | [Diced](https://diced.readthedocs.io/en/stable/)      |
+
+All of these are reimplementations of the original code to run more effeciently.
+They should produce identical output while using less resources.
+(Big thanks to [@althonos](https://github.com/althonos)!)
+
+## Technical details and benchmarks
+
+The program CCTyper starts by identifying _cas_ genes in your input sequences.
+It does this using Prodigal to predict Open Reading Frames (ORFs), and then
+screen these using HMMer against a database of known _cas_ genes. These are
+actually the most compute intensive steps in the whole process and take
+about 20 and 75% of the total runtime, respectively.
+
+Next up is the identification of CRISPR arrays, by looking for direct repeats.
+This is done with [MinCED](https://github.com/ctSkennerton/minced),
+which is based on the trusty old [CRT](http://www.room220.com/crt/).
+This takes only about 1% of the total runtime, so a potential speed up
+here will only have a minor effect.
+
+By replacing each of these tools with an optimised replacement,
+I hope to improve the general effeciency of the tool and improve
+the feasibility of large-scale CRISPR-Cas identification in datasets
+of hundreds of thousands of bacterial genomes.
+
+Despite changing the core modules of CCTyper, I want to ensure that the
+**output remains identical**. Therefore, benchmarks will evaluate output
+files as well as runtime and use of computational resources.
+
+### Benchmark setup
+
+To benchmark the optimised version of CCTyper against the original,
+I want to run:
+
+1. The original CCTyper
+2. CCTyper with Prodigal swapped for Pyrodigal
+3. CCTyper with Pyrodigal and PyHMMER
+4. CCTyper with Pyrodigal, PyHMMER and Diced
+
+I want to measure:
+
+1. Total runtime
+2. Runtime per step (ORF prediction, _cas_ gene identification, CRISPR identification)
+3. Memory use
+4. CPU load(?)
+
+As test data, I use:
+
+- 100 randomly selected _Campylobacter_ genomes
+- 100 randomly selected genomes from the benchmark included in the
+[CCTyper paper](https://doi.org/10.1101/2020.05.15.097824)
+
+These genomes will be concatenated in a single fasta file, which
+already improves runtimes compared to running them as separate files.
+
+And I want to test all this on a single CPU core/thread, and
+multithreaded: using 4 and 8? threads.
+
+## Notes to self
+
+CCTyper works by using command-line tools to run in the background,
+then collect the results by reading their output files.
+Pyrodigal has a command-line version and works as drop-in replacement
+for Prodigal.
+PyHMMER and Diced, on the other hand, use Python APIs and have
+no documented(?) command-line interface. As CCTyper is implemented
+in Python, this should work well together, but the implementation
+needs to change a bit more. Instead of inserting a shell command,
+I will have to import Python modules and write some extra lines
+to produce the data required by CCTyper and perhaps process these
+internally rather than write them to files first and then read
+those again. That should improve computational efficiency, while
+it makes debugging a bit harder because the data never goes out
+of the workflow.
+This may pose a challenge, but let's see how well it goes!
+
+Minor changes to make:
+
+- set default database as conda environment variable
+- make 'single' the default mode again rather than my preferred 'meta'
+
+### Workflow
+
+To do all this, I want to keep a record of the commands I have run.
+In the git repository, I will create branches with the four different
+versions I want to test: original CCTyper, and Pyrodigal, PyHMMER and Diced
+built into CCTyper consecutively. The workflow can then be as follows:
+
+1. Check out git branch
+2. Install current 'version' of CCTyper with `setup.py` file
+3. Run test
+4. Store and check results
+5. Repeat!
+
+(Keep a record of all the commands as shell script and put that in a
+markdown file for easy reference!)
+
+The results should be saved: both log files and output files, so that
+they may be reviewed.
+
+I want to track total runtime and memory use with `/usr/bin/time -v`,
+and calculate runtimes per processing step by collecting the respective
+times from the log files created by CCTyper (messages are all timestamped).
+
+Finally, I should be able to make nice and tidy tables of the times and all,
+and visualise these in R and make some stacked bar plots that allow easy
+comparison between runtimes per analysis step.
+These may be stored in Git, and/or archived on Zenodo.
+
+See original documentation below:
+
+-----
+
 # CRISPRCasTyper
 
 Detect CRISPR-Cas genes and arrays, and predict the subtype based on both Cas genes and CRISPR repeat sequence.
@@ -11,23 +137,23 @@ This software finds Cas genes with a large suite of HMMs, then groups these HMMs
 Furthermore, it finds CRISPR arrays with [minced](https://github.com/ctSkennerton/minced) and by BLASTing a large suite of known repeats, and using a kmer-based machine learning approach (extreme gradient boosting trees) it predicts the subtype of the CRISPR arrays based on the consensus repeat.
 It then connects the Cas operons and CRISPR arrays, producing as output:
 
-* CRISPR-Cas loci, with consensus subtype prediction based on both Cas genes (mostly) and CRISPR consensus repeats
-* Orphan Cas operons, and their predicted subtype
-* Orphan CRISPR arrays, and their predicted associated subtype
+- CRISPR-Cas loci, with consensus subtype prediction based on both Cas genes (mostly) and CRISPR consensus repeats
+- Orphan Cas operons, and their predicted subtype
+- Orphan CRISPR arrays, and their predicted associated subtype
 
 #### It includes the following 50 subtypes/variants [(find typing scheme here)](https://typer.crispr.dk/#/typing)
 
-* I-A, I-B, I-C, I-D, I-E, I-F, I-F (transposon), I-G, II-A, II-B, II-C, II-C2, II-D, III-A, III-B, III-C, III-D, III-E, III-F, IV-A1, IV-A2, IV-A3, IV-B, IV-C, IV-D, IV-E, V-A, V-B1, V-B2, V-C, V-D, V-E, V-F1, V-F2, V-F3, V-F (the rest), V-G, V-H, V-I, V-J, V-K, V-L, V-M, VI-A, VI-B1, VI-B2, VI-C, VI-D, VI-X, VI-Y.
+- I-A, I-B, I-C, I-D, I-E, I-F, I-F (transposon), I-G, II-A, II-B, II-C, II-C2, II-D, III-A, III-B, III-C, III-D, III-E, III-F, IV-A1, IV-A2, IV-A3, IV-B, IV-C, IV-D, IV-E, V-A, V-B1, V-B2, V-C, V-D, V-E, V-F1, V-F2, V-F3, V-F (the rest), V-G, V-H, V-I, V-J, V-K, V-L, V-M, VI-A, VI-B1, VI-B2, VI-C, VI-D, VI-X, VI-Y.
 
-* All subtypes from the most recent Nature Reviews Microbiology (Makarova et al. 2020): [Evolutionary classification of CRISPR–Cas systems: a burst of class 2 and derived variants](https://doi.org/10.1038/s41579-019-0299-x)
-* Updated type IV subtypes and variants based on: [Type IV CRISPR–Cas systems are highly diverse and involved in competition between plasmids](https://doi.org/10.1093/nar/gkz1197)
-* Type V-K: [RNA-guided DNA insertion with CRISPR-associated transposases](https://doi.org/10.1126/science.aax9181)
-* Transposon associated type I-F: [Transposon-encoded CRISPR–Cas systems direct RNA-guided DNA integration](https://doi.org/10.1038/s41586-019-1323-z)
-* New V-A variants: [Novel Type V-A CRISPR Effectors Are Active Nucleases with Expanded Targeting Capabilities](https://doi.org/10.1089/crispr.2020.0043)
-* New Cas13s: [Programmable RNA editing with compact CRISPR–Cas13 systems from uncultivated microbes](https://doi.org/10.1038/s41592-021-01124-4)
-* V-L (cas12l): [A new family of CRISPR-type V nucleases with C-rich PAM recognition](https://doi.org/10.15252/embr.202255481)
-* V-M (cas12m): [The miniature CRISPR-Cas12m effector binds DNA to block transcription](https://doi.org/10.1016/j.molcel.2022.11.003)
-* II-D and II-C2: [Compact Cas9d and HEARO enzymes for genome editing discovered from uncultivated microbes](https://doi.org/10.1038/s41467-022-35257-7)
+- All subtypes from the most recent Nature Reviews Microbiology (Makarova et al. 2020): [Evolutionary classification of CRISPR–Cas systems: a burst of class 2 and derived variants](https://doi.org/10.1038/s41579-019-0299-x)
+- Updated type IV subtypes and variants based on: [Type IV CRISPR–Cas systems are highly diverse and involved in competition between plasmids](https://doi.org/10.1093/nar/gkz1197)
+- Type V-K: [RNA-guided DNA insertion with CRISPR-associated transposases](https://doi.org/10.1126/science.aax9181)
+- Transposon associated type I-F: [Transposon-encoded CRISPR–Cas systems direct RNA-guided DNA integration](https://doi.org/10.1038/s41586-019-1323-z)
+- New V-A variants: [Novel Type V-A CRISPR Effectors Are Active Nucleases with Expanded Targeting Capabilities](https://doi.org/10.1089/crispr.2020.0043)
+- New Cas13s: [Programmable RNA editing with compact CRISPR–Cas13 systems from uncultivated microbes](https://doi.org/10.1038/s41592-021-01124-4)
+- V-L (cas12l): [A new family of CRISPR-type V nucleases with C-rich PAM recognition](https://doi.org/10.15252/embr.202255481)
+- V-M (cas12m): [The miniature CRISPR-Cas12m effector binds DNA to block transcription](https://doi.org/10.1016/j.molcel.2022.11.003)
+- II-D and II-C2: [Compact Cas9d and HEARO enzymes for genome editing discovered from uncultivated microbes](https://doi.org/10.1038/s41467-022-35257-7)
 
 #### It can automatically draw gene maps of CRISPR-Cas systems and orphan Cas operons and CRISPR arrays
 
@@ -46,9 +172,9 @@ Find a free to read version on [BioRxiv](https://doi.org/10.1101/2020.05.15.0978
 1. [Quick start](#quick)
 2. [Installation](#install)
 3. [CRISPRCasTyper - How to](#cctyperhow)
-    * [Plotting](#plot)
+    - [Plotting](#plot)
 4. [RepeatType - How to](#repeattype)
-    * [Updated models](#repeatnew)
+    - [Updated models](#repeatnew)
 5. [RepeatType - Train](#repeattrain)
 6. [Troubleshoot](#trouble)
 
@@ -146,92 +272,92 @@ cctyper -h
 
 #### Output <a name="cctyperout"></a>
 
-* **CRISPR_Cas.tab:**           CRISPR_Cas loci, with consensus subtype prediction
-  * Contig: Sequence accession
-  * Operon: Operon ID (Sequence accession @ NUMBER)
-  * Operon_Pos: [Start, End] of operon
-  * Prediction: Consenus prediction based on both Cas operon and CRISPR arrays
-  * CRISPRs: CRISPRs adjacent to Cas operon
-  * Distances: Distances to CRISPRs from Cas operon
-  * Prediction_Cas: Subtype prediction based on Cas operon
-  * Prediction_CRISPRs: Subtype prediction of CRISPRs based on CRISPR repeat sequences
-* **cas_operons.tab:**          All certain Cas operons
-  * Contig: Sequence accession
-  * Operon: Operon ID (Sequence accession @ NUMBER)
-  * Start: Start of operon
-  * End: End of operon
-  * Prediction: Subtype prediction
-  * Complete_Interference: Percent completion of the interference module(s). Can be a list if best_type is a list (Hybrid and Ambiguous)
-  * Complete_Adaptation: Percent completion of the adaptation module(s). Can be a list if best_type is a list (Hybrid and Ambiguous)
-  * Best_type: Subtype with the highest score. If the score is high then Prediction = Best_type
-  * Best_score: Score of the highest scoring subtype
-  * Genes: List of Cas genes
-  * Positions: List of Gene IDs for the genes
-  * E-values: List of E-values for the genes
-  * CoverageSeq: List of sequence coverages for the genes
-  * CoverageHMM: List of HMM coverages for the genes
-  * Strand_Interference: Strand of interference module. 1 is positive strand, -1 is negative strand, 0 is mixed, NA if no interference gene found
-  * Strand_Adaptation: Strand of adaptation module. 1 is positive strand, -1 is negative strand, 0 is mixed, NA if no adaptation gene found
-* **crisprs_all.tab:**          All CRISPR arrays, also false positives
-  * Contig: Sequence accession
-  * CRISPR: CRISPR ID (minced: Sequence accession _NUMBER; repeatBLAST: Sequence accession - NUMBER_ NUMBER)
-  * Start: Start of CRISPR
-  * End: End of CRISPR
-  * Consensus_repeat: Consensus repeat sequence
-  * N_repeats: Number of repeats
-  * Repeat_len: Length of repeat sequences
-  * Spacer_len_avg: Average spacer length
-  * Repeat_identity: Average identity of repeat sequences
-  * Spacer_identity: Average identity of spacer sequences
-  * Spacer_len_sem: Standard error of the mean of spacer lenghts
-  * Trusted: TRUE/FALSE, is the array trusted. Based on repeat/spacer identity, spacer sem, prediction probability and adjacency to a cas operon
-  * Prediction: Prediction of the associated subtype based on the repeat sequence
-  * Subtype: Subtype with highest prediction probability. Prediction = Subtype if Subtype_probability is high
-  * Subtype_probability: Probability of subtype prediction
-* **crisprs_near_cas.tab:**     CRISPRs part of CRISPR-Cas loci
-  * Same columns as crisprs_all.tab
-* **crisprs_orphan.tab:**       Orphan CRISPRs (those not in CRISPR_Cas.tab)
-  * Same columns as crisprs_all.tab
-* **crisprs_putative.tab:**     Low quality CRISPRs. Most likely false positives
-  * Same columns as crisprs_all.tab
-* **cas_operons_orphan.tab:**   Orphan Cas operons (those not in CRISPR_Cas.tab)
-  * Same columns as cas_operons.tab
-* **CRISPR_Cas_putative.tab:**  Putative CRISPR_Cas loci, often lonely Cas genes next to a CRISPR array
-  * Same columns as CRISPR_Cas.tab
-* **cas_operons_putative.tab:** Putative Cas operons, mostly false positives, but also some ambiguous and partial systems
-  * Same columns as cas_operons.tab
-* **spacers/*.fa:**             Fasta files with all spacer sequences
-* **hmmer.tab:**                All HMM vs. ORF matches, unfiltered results
-  * Hmm: HMM name
-  * ORF: ORF name (Sequence accession _ Gene ID)
-  * tlen: ORF length
-  * qlen: HMM length
-  * Eval: E-value of alignment
-  * score: Alignment score
-  * start: ORF start
-  * end: ORF end
-  * Acc: Sequence accession
-  * Pos: Gene ID
-  * Cov_seq: Sequence coverage
-  * Cov_hmm: HMM coverage
-  * strand: Coding strand is like input (1) or reverse complement (-1)
-* **genes.tab**                 All genes and their positions
-  * Contig: Sequence accession
-  * Start: Start of ORF
-  * End: End of ORF
-  * Strand: Coding strand is like input (1) or reverse complement (-1)
-  * Pos: Gene ID
-* **arguments.tab:**            File with arguments given to CRISPRCasTyper
-* **hmmer.log**                 Error messages from HMMER (only produced if any errors were encountered)
+- **CRISPR_Cas.tab:**           CRISPR_Cas loci, with consensus subtype prediction
+  - Contig: Sequence accession
+  - Operon: Operon ID (Sequence accession @ NUMBER)
+  - Operon_Pos: [Start, End] of operon
+  - Prediction: Consenus prediction based on both Cas operon and CRISPR arrays
+  - CRISPRs: CRISPRs adjacent to Cas operon
+  - Distances: Distances to CRISPRs from Cas operon
+  - Prediction_Cas: Subtype prediction based on Cas operon
+  - Prediction_CRISPRs: Subtype prediction of CRISPRs based on CRISPR repeat sequences
+- **cas_operons.tab:**          All certain Cas operons
+  - Contig: Sequence accession
+  - Operon: Operon ID (Sequence accession @ NUMBER)
+  - Start: Start of operon
+  - End: End of operon
+  - Prediction: Subtype prediction
+  - Complete_Interference: Percent completion of the interference module(s). Can be a list if best_type is a list (Hybrid and Ambiguous)
+  - Complete_Adaptation: Percent completion of the adaptation module(s). Can be a list if best_type is a list (Hybrid and Ambiguous)
+  - Best_type: Subtype with the highest score. If the score is high then Prediction = Best_type
+  - Best_score: Score of the highest scoring subtype
+  - Genes: List of Cas genes
+  - Positions: List of Gene IDs for the genes
+  - E-values: List of E-values for the genes
+  - CoverageSeq: List of sequence coverages for the genes
+  - CoverageHMM: List of HMM coverages for the genes
+  - Strand_Interference: Strand of interference module. 1 is positive strand, -1 is negative strand, 0 is mixed, NA if no interference gene found
+  - Strand_Adaptation: Strand of adaptation module. 1 is positive strand, -1 is negative strand, 0 is mixed, NA if no adaptation gene found
+- **crisprs_all.tab:**          All CRISPR arrays, also false positives
+  - Contig: Sequence accession
+  - CRISPR: CRISPR ID (minced: Sequence accession _NUMBER; repeatBLAST: Sequence accession - NUMBER_ NUMBER)
+  - Start: Start of CRISPR
+  - End: End of CRISPR
+  - Consensus_repeat: Consensus repeat sequence
+  - N_repeats: Number of repeats
+  - Repeat_len: Length of repeat sequences
+  - Spacer_len_avg: Average spacer length
+  - Repeat_identity: Average identity of repeat sequences
+  - Spacer_identity: Average identity of spacer sequences
+  - Spacer_len_sem: Standard error of the mean of spacer lenghts
+  - Trusted: TRUE/FALSE, is the array trusted. Based on repeat/spacer identity, spacer sem, prediction probability and adjacency to a cas operon
+  - Prediction: Prediction of the associated subtype based on the repeat sequence
+  - Subtype: Subtype with highest prediction probability. Prediction = Subtype if Subtype_probability is high
+  - Subtype_probability: Probability of subtype prediction
+- **crisprs_near_cas.tab:**     CRISPRs part of CRISPR-Cas loci
+  - Same columns as crisprs_all.tab
+- **crisprs_orphan.tab:**       Orphan CRISPRs (those not in CRISPR_Cas.tab)
+  - Same columns as crisprs_all.tab
+- **crisprs_putative.tab:**     Low quality CRISPRs. Most likely false positives
+  - Same columns as crisprs_all.tab
+- **cas_operons_orphan.tab:**   Orphan Cas operons (those not in CRISPR_Cas.tab)
+  - Same columns as cas_operons.tab
+- **CRISPR_Cas_putative.tab:**  Putative CRISPR_Cas loci, often lonely Cas genes next to a CRISPR array
+  - Same columns as CRISPR_Cas.tab
+- **cas_operons_putative.tab:** Putative Cas operons, mostly false positives, but also some ambiguous and partial systems
+  - Same columns as cas_operons.tab
+- **spacers/*.fa:**             Fasta files with all spacer sequences
+- **hmmer.tab:**                All HMM vs. ORF matches, unfiltered results
+  - Hmm: HMM name
+  - ORF: ORF name (Sequence accession _ Gene ID)
+  - tlen: ORF length
+  - qlen: HMM length
+  - Eval: E-value of alignment
+  - score: Alignment score
+  - start: ORF start
+  - end: ORF end
+  - Acc: Sequence accession
+  - Pos: Gene ID
+  - Cov_seq: Sequence coverage
+  - Cov_hmm: HMM coverage
+  - strand: Coding strand is like input (1) or reverse complement (-1)
+- **genes.tab**                 All genes and their positions
+  - Contig: Sequence accession
+  - Start: Start of ORF
+  - End: End of ORF
+  - Strand: Coding strand is like input (1) or reverse complement (-1)
+  - Pos: Gene ID
+- **arguments.tab:**            File with arguments given to CRISPRCasTyper
+- **hmmer.log**                 Error messages from HMMER (only produced if any errors were encountered)
 
 ##### If run with `--keep_tmp` the following is also produced
 
-* **prodigal.log**              Log from prodigal
-* **proteins.faa**              Protein sequences
-* **hmmer/*.tab**               Alignment output from HMMER for each Cas HMM
-* **minced.out:**               CRISPR array output from minced
-* **blast.tab:**                BLAST output from repeat alignment against flanking regions of cas operons
-* **Flank....:**                Fasta of flanking regions near cas operons and BLAST database of this  
+- **prodigal.log**              Log from prodigal
+- **proteins.faa**              Protein sequences
+- **hmmer/*.tab**               Alignment output from HMMER for each Cas HMM
+- **minced.out:**               CRISPR array output from minced
+- **blast.tab:**                BLAST output from repeat alignment against flanking regions of cas operons
+- **Flank....:**                Fasta of flanking regions near cas operons and BLAST database of this  
 
 #### Notes on output
 
@@ -245,13 +371,13 @@ These maps can be expanded (`--expand N`) by adding unknown genes and genes with
 
 The plot below is run with `--expand 5000`
 
-* Arrays are in alternating black/white displaying the actual number of repeats/spacers, and with their predicted subtype association based on the consensus repeat sequence.
-* The interference module is in yellow.
-* The adaptation module is in blue.
-* Cas6 is in red.
-* Accessory genes are in purple
-* Genes with alignment scores below the thresholds are lighter and with parentheses around names.
-* Unknown genes are in gray (the number matches the genes.tab file)
+- Arrays are in alternating black/white displaying the actual number of repeats/spacers, and with their predicted subtype association based on the consensus repeat sequence.
+- The interference module is in yellow.
+- The adaptation module is in blue.
+- Cas6 is in red.
+- Accessory genes are in purple
+- Genes with alignment scores below the thresholds are lighter and with parentheses around names.
+- Unknown genes are in gray (the number matches the genes.tab file)
 
 <img src='img/plot2.svg' align="left" height="350" />
 
@@ -275,61 +401,61 @@ repeatType repeats.txt
 
 The script prints:
 
-* Repeat sequence
-* Predicted subtype
-* Probability of prediction
+- Repeat sequence
+- Predicted subtype
+- Probability of prediction
 
 #### Notes on output
 
-* Predictions with probabilities below 0.75 are uncertain, and should be taken with a grain of salt.
-* Prior to version 1.4.0 the curated repeatTyper model was included in CCTyper
-* From version 1.4.0 and onwards updated repeatTyper models are included in CCTyper (see more information in the section below)
-* The followinig subtypes are included in the updated model as per December 2022:
-  * I-A, I-B, I-C, I-D, I-E, I-F, I-F (Transposon), I-G
-  * II-A, II-B, II-C
-  * III-A, III-B, III-C, III-D, III-E, III-F
-  * IV-A1, IV-A2, IV-A3, IV-D, IV-E
-  * V-A, V-B1, V-E, V-F1, V-F2, V-F3, V-F (the rest), V-G, V-I, V-J, V-K
-  * VI-A, VI-B1, VI-B2, VI-C, VI-D
-* This is the accuracy per subtype (on an unseen test dataset):
-* I-A      0.76
-* I-B      0.81
-* I-C      0.97
-* I-D      0.86
-* I-E      0.95
-* I-F      0.96
-* I-F_T    0.99
-* I-G      0.89
-* II-A     0.92
-* II-B     0.97
-* II-C     0.90
-* III-A    0.82
-* III-B    0.68
-* III-C    0.60
-* III-D    0.59
-* III-E    1.00
-* III-F    0.25
-* IV-A1    0.85
-* IV-A2    0.68
-* IV-A3    0.96
-* IV-D     0.85
-* IV-E     0.92
-* V-A      1.00
-* V-B1     0.90
-* V-E      0.30
-* V-F      0.87
-* V-F1     0.87
-* V-F2     0.90
-* V-F3     0.90
-* V-G      0.67
-* V-I      0.80
-* V-J      0.63
-* V-K      0.99
-* VI-A     0.96
-* VI-B1    0.96
-* VI-B2    1.00
-* VI-C     0.67
-* VI-D     0.97
+- Predictions with probabilities below 0.75 are uncertain, and should be taken with a grain of salt.
+- Prior to version 1.4.0 the curated repeatTyper model was included in CCTyper
+- From version 1.4.0 and onwards updated repeatTyper models are included in CCTyper (see more information in the section below)
+- The followinig subtypes are included in the updated model as per December 2022:
+  - I-A, I-B, I-C, I-D, I-E, I-F, I-F (Transposon), I-G
+  - II-A, II-B, II-C
+  - III-A, III-B, III-C, III-D, III-E, III-F
+  - IV-A1, IV-A2, IV-A3, IV-D, IV-E
+  - V-A, V-B1, V-E, V-F1, V-F2, V-F3, V-F (the rest), V-G, V-I, V-J, V-K
+  - VI-A, VI-B1, VI-B2, VI-C, VI-D
+- This is the accuracy per subtype (on an unseen test dataset):
+- I-A      0.76
+- I-B      0.81
+- I-C      0.97
+- I-D      0.86
+- I-E      0.95
+- I-F      0.96
+- I-F_T    0.99
+- I-G      0.89
+- II-A     0.92
+- II-B     0.97
+- II-C     0.90
+- III-A    0.82
+- III-B    0.68
+- III-C    0.60
+- III-D    0.59
+- III-E    1.00
+- III-F    0.25
+- IV-A1    0.85
+- IV-A2    0.68
+- IV-A3    0.96
+- IV-D     0.85
+- IV-E     0.92
+- V-A      1.00
+- V-B1     0.90
+- V-E      0.30
+- V-F      0.87
+- V-F1     0.87
+- V-F2     0.90
+- V-F3     0.90
+- V-G      0.67
+- V-I      0.80
+- V-J      0.63
+- V-K      0.99
+- VI-A     0.96
+- VI-B1    0.96
+- VI-B2    1.00
+- VI-C     0.67
+- VI-D     0.97
 
 ### Updated RepeatTyper models <a name="repeatnew"></a>
 
