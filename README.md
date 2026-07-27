@@ -108,8 +108,24 @@ built into CCTyper consecutively. The workflow can then be as follows:
 4. Store and check results
 5. Repeat!
 
-(Keep a record of all the commands as shell script and put that in a
-markdown file for easy reference!)
+Example code:
+
+```bash
+git checkout main
+pip install .
+/usr/bin/time -v cctyper test_data/100_campys.fasta results/100_campy-main-4\
+ -t 4 --simplelog --db data | tee log/100_campy-main-4.log
+
+git checkout pyrodigal
+pip install .
+/usr/bin/time -v cctyper test_data/100_campys.fasta results/100_campy-pyrodigal-4\
+ -t 4 --simplelog --db data | tee log/100_campy-pyrodigal-4.log
+
+pip checkout pyhmmer
+pip install .
+/usr/bin/time -v cctyper test_data/100_campys.fasta results/100_campy-pyhmmer-4\
+ -t 4 --simplelog --db data | tee log/100_campy-pyhmmer-4.log
+```
 
 The results should be saved: both log files and output files, so that
 they may be reviewed.
@@ -123,7 +139,23 @@ and visualise these in R and make some stacked bar plots that allow easy
 comparison between runtimes per analysis step.
 These may be stored in Git, and/or archived on Zenodo.
 
-See original documentation below:
+## Acknowledgements
+
+This tool can only exist thanks to the work of:
+
+- Jakob Russel: [CCTyper](https://github.com/Russel88/CRISPRCasTyper)
+([paper](https://doi.org/10.1089/crispr.2020.0059),
+[freely available preprint](https://doi.org/10.1101/2020.05.15.097824))
+- Martin Larralde: [Pyrodigal](https://pyrodigal.readthedocs.io/en/stable/)
+([paper](https://doi.org/10.21105/joss.04296)),
+[PyHMMER](https://pyhmmer.readthedocs.io/en/stable/)
+([paper](https://doi.org/10.1093/bioinformatics/btad214))
+- Sean Eddy: [HMMER](https://hmmer.org)
+- Hyatt, D., Chen, GL., LoCascio, P.F., _et al._: [Prodigal](https://doi.org/10.1186/1471-2105-11-119)
+- Connor T. Skennerton: [MinCED](https://github.com/ctSkennerton/minced)
+- Camacho C., Coulouris G., Avagyan V., _et al._: [BLAST](https://doi.org/10.1186/1471-2105-10-421)
+
+_See original documentation below:_
 
 -----
 

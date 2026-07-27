@@ -3,11 +3,11 @@ import logging
 import sys
 import shutil
 import json
-import pkg_resources
 import subprocess
 
 import pandas as pd
 
+from importlib.metadata import version
 from Bio import SeqIO
 
 
@@ -35,7 +35,6 @@ class Controller(object):
         self.nogrid = args.no_grid
         self.expand = args.expand
         self.simplelog = args.simplelog
-        self.customhmm = args.custom_hmm
         self.repeat_id = args.repeat_id
         self.spacer_id = args.spacer_id
         self.spacer_sem = args.spacer_sem
@@ -71,16 +70,13 @@ class Controller(object):
                 datefmt="%Y-%m-%d %H:%M:%S",
                 level=self.lvl,
             )
-        logging.info(
-            "Running CRISPRCasTyper version {}".format(
-                pkg_resources.require("cctyper")[0].version
-            )
-        )
+        logging.info(f'Running CRISPRCasTyper version {version("cctyper")}')
 
         # kmer warning
         if self.kmer != 4:
             logging.warning(
-                "kmer argument should only be used if the repeatTyper model is trained with a different kmer than 4."
+                "kmer argument should only be used if the repeatTyper model"
+                " is trained with a different kmer than 4."
             )
 
         # Force consistency
@@ -145,9 +141,9 @@ class Controller(object):
         self.num_headers = False
         for i in self.len_dict.keys():
             try:
-                dump = float(i)
+                float(i)
                 self.num_headers = True
-            except:
+            except ValueError:
                 pass
 
         if self.num_headers:
@@ -171,13 +167,6 @@ class Controller(object):
             if self.num_headers:
                 os.remove(self.out + "fixed_input.fna")
 
-            if os.stat(self.out + "hmmer.log").st_size == 0:
-                os.remove(self.out + "hmmer.log")
-
-            if self.customhmm != "":
-                if os.stat(self.out + "hmmer_custom.log").st_size == 0:
-                    os.remove(self.out + "hmmer_custom.log")
-
             if not self.keep_tmp:
 
                 logging.info("Removing temporary files")
@@ -200,12 +189,12 @@ class Controller(object):
         if self.db == "":
             try:
                 self.db = os.environ["CCTYPER_DB"]
-            except:
+            except Exception:
                 logging.error("Could not find database directory")
                 sys.exit()
 
         self.scoring = os.path.join(self.db, "CasScoring.csv")
-        self.pdir = os.path.join(self.db, "Profiles", "")
+        self.pdir = os.path.join(self.db, "pyhmmer_profiles", "")
         self.xgb = os.path.join(self.db, "xgb_repeats.model")
         self.typedict = os.path.join(self.db, "type_dict.tab")
         self.cutoffdb = os.path.join(self.db, "cutoffs.tab")
@@ -217,7 +206,7 @@ class Controller(object):
         if os.path.isfile(self.scoring):
             try:
                 self.scores = pd.read_csv(self.scoring, sep=",")
-            except:
+            except Exception:
                 logging.error("CasScoring table could not be loaded")
                 sys.exit()
         else:

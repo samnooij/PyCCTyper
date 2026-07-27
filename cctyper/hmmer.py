@@ -1,13 +1,13 @@
 import os
-import subprocess
 import sys
 import logging
+import pyhmmer
 import re
-import glob
 import tqdm
+import collections
 
-import multiprocess as mp
 import pandas as pd
+from pathlib import Path
 
 
 class HMMER(object):
@@ -23,10 +23,9 @@ class HMMER(object):
             self.read_hmm()
         # Else run HMMER load and write data
         else:
-            self.run_hmm()
-            self.load_hmm()
+            hmm_df = self.run_hmm()
+            self.load_hmm(dataframe=hmm_df)
             self.write_hmm()
-            self.run_custom_hmm()
 
         # Check if any cas genes
         self.check_hmm()
@@ -34,95 +33,187 @@ class HMMER(object):
         # Parse
         self.parse_hmm()
 
-        # Load Custom HMM db
-        self.load_custom_hmm()
+    # Run pyHMMER and parse required information
+    def hmmsearch(self, progress=bool):
 
-    # A single search
-    def hmmsearch(self, hmm):
+        hmms = []
+        hmm_files = list(Path(self.pdir).glob("*.hmm"))
+        for hmm_file in hmm_files:
+            with pyhmmer.plan7.HMMFile(hmm_file) as hmmfile:
+                hmm = hmmfile.read()
+            hmms.append(hmm)
 
-        hmm_name = re.sub("\.hmm", "", hmm)
-
-        logging.debug("Running HMMER against " + hmm_name)
-
-        with open(self.out + "hmmer.log", "a") as hmmer_log:
-            subprocess.run(
-                [
-                    "hmmsearch",
-                    "--domtblout",
-                    os.path.join(self.out + "hmmer", hmm_name + ".tab"),
-                    os.path.join(self.pdir, hmm),
-                    self.prot_path,
-                ],
-                stdout=subprocess.DEVNULL,
-                stderr=hmmer_log,
-            )
-
-    # Parallel search of all HMMs
-    def run_hmm(self):
-
-        logging.info("Running HMMER against Cas profiles")
-
-        # Make dir
-        os.mkdir(self.out + "hmmer")
-        # Start multiprocess
-        pool = mp.Pool(self.threads)
-        # Each HMM
-        if self.lvl == "DEBUG" or self.simplelog:
-            list(pool.imap(self.hmmsearch, os.listdir(self.pdir)))
-        else:
-            list(
-                tqdm.tqdm(
-                    pool.imap(self.hmmsearch, os.listdir(self.pdir)),
-                    total=len(os.listdir(self.pdir)),
-                )
-            )
-        # Close multiprocess
-        pool.close()
-
-    # Load data
-    def load_hmm(self):
-
-        logging.debug("Loading HMMER output")
-
-        # Get files
-        hmm_files = glob.glob(os.path.join(self.out + "hmmer", "*.tab"))
-
-        # Parse externally
-        with open(self.out + "hmmer.tab", "w") as hmmer_tab:
-            subprocess.run(["grep", "-v", "^#"] + hmm_files, stdout=hmmer_tab)
-            subprocess.run(["sed", "-i", "s/:/ /", self.out + "hmmer.tab"])
-
-        # Load
-        hmm_df = pd.read_csv(
-            self.out + "hmmer.tab",
-            sep="\s+",
-            header=None,
-            usecols=(0, 1, 3, 6, 7, 8, 16, 17, 18, 19, 20, 21, 22, 24, 26, 28),
-            names=(
-                "Hmm",
-                "ORF",
+        Result = collections.namedtuple(
+            "Result",
+            [
+                "target_name",
+                "target_accession",
                 "tlen",
+                "query_name",
+                "query_accession",
                 "qlen",
-                "Eval",
-                "score",
+                "evalue",
+                "bitscore",
+                "bias",
+                "domain_number",
+                "out_of_domains",
+                "c_evalue",
+                "i_evalue",
+                "domain_bitscore",
+                "domain_bias",
                 "hmm_from",
                 "hmm_to",
                 "ali_from",
                 "ali_to",
                 "env_from",
                 "env_to",
-                "pprop",
-                "start",
-                "end",
-                "strand",
-            ),
+                "posterior_probabilities",
+                "description",
+            ],
         )
 
-        # Parse HMM names
-        hmm_df["Hmm"] = [
-            re.sub("\.tab", "", re.sub(os.path.join(self.out, "hmmer", ""), "", x))
-            for x in hmm_df["Hmm"]
+        result_list = []
+
+        with pyhmmer.easel.SequenceFile(self.prot_path, digital=True) as seqs_file:
+            sequences = seqs_file.read_block()
+
+        def collect_results(hits):
+            hmm_name = hits.query.name
+            for hit in hits:
+                if hit.included:
+                    orf_name = hit.name
+                    evalue = hit.evalue
+                    bitscore = hit.score
+                    domains = len(hit.domains)
+                    for i in range(domains):
+                        domain_number = i + 1  # Because it counts 0-based
+                        target_length = hit.domains[i].alignment.target_length
+                        hmm_length = hit.domains[i].alignment.hmm_length
+
+                        hmm_start = hit.domains[i].alignment.hmm_from
+                        hmm_end = hit.domains[i].alignment.hmm_to
+
+                        ali_start = hit.domains[i].alignment.target_from
+                        ali_end = hit.domains[i].alignment.target_to
+
+                        env_start = hit.domains[i].env_from
+                        env_end = hit.domains[i].env_to
+
+                        # PyHMMER does not record strand by default; only in the 'long targets pipeline', which does
+                        # not support the cpus= option!
+                        # However, Pyrodigal saves this in the FASTA ID, which is stored as hit description!
+                        strand = hit.description.split("#")[3].strip(" ")
+                        if strand is None:
+                            strand = 0
+
+                        result_list.append(
+                            Result(
+                                orf_name,
+                                hit.accession,
+                                target_length,
+                                hmm_name,
+                                hit.domains[i].alignment.hmm_accession,
+                                hmm_length,
+                                evalue,
+                                bitscore,
+                                hit.bias,
+                                domain_number,
+                                domains,
+                                hit.domains[i].c_evalue,
+                                hit.domains[i].i_evalue,
+                                hit.domains[i].score,
+                                hit.domains[i].bias,
+                                hmm_start,
+                                hmm_end,
+                                ali_start,
+                                ali_end,
+                                env_start,
+                                env_end,
+                                hit.domains[i].alignment.posterior_probabilities,
+                                hit.description,
+                            )
+                        )
+
+        if progress:
+            for hits in tqdm.tqdm(
+                pyhmmer.hmmer.hmmsearch(hmms, sequences, cpus=self.threads),
+                total=len(hmms),
+            ):
+                collect_results(hits=hits)
+        else:
+            for hits in pyhmmer.hmmer.hmmsearch(hmms, sequences, cpus=self.threads):
+                collect_results(hits=hits)
+
+        result_df = pd.DataFrame(result_list, columns=Result._fields)
+
+        return result_df
+
+    # Parallel search of all HMMs
+    def run_hmm(self):
+
+        logging.info("Running pyHMMER against Cas profiles")
+
+        # Make dir
+        os.mkdir(self.out + "hmmer")
+        # Each HMM
+        if self.lvl == "DEBUG" or self.simplelog:
+            hmm_df = self.hmmsearch(progress=False)
+        else:
+            hmm_df = self.hmmsearch(progress=True)
+
+        logging.info("Write pyHMMER output to file")
+        hmm_df.to_csv(
+            os.path.join(self.out + "hmmer", "Cas_HMMer-like.tab"),
+            sep="\t",
+            index=False,
+        )
+
+        return hmm_df
+
+    # Load data
+    def load_hmm(self, dataframe):
+
+        logging.debug("Loading HMMER output")
+
+        # Load relevant columns from pyHMMER output
+        hmm_df = dataframe.loc[
+            :,
+            [
+                "query_name",
+                "target_name",
+                "tlen",
+                "qlen",
+                "evalue",
+                "bitscore",
+                "hmm_from",
+                "hmm_to",
+                "ali_from",
+                "ali_to",
+                "env_from",
+                "env_to",
+                "description",
+            ],
         ]
+        # Rename some columns to match CCTyper's default output
+        hmm_df = hmm_df.rename(
+            columns={
+                "query_name": "Hmm",
+                "target_name": "ORF",
+                "evalue": "Eval",
+                "bitscore": "score",
+            }
+        )
+
+        # Split the 'description' field to find the start and end positions, and strand
+        hmm_df[["nothing", "start", "end", "strand", "info"]] = (
+            hmm_df.description.str.split("#", expand=True)
+        )
+        # Note that these are parsed as strings, with whitespace surrounding them...
+        hmm_df["start"] = hmm_df["start"].str.strip().astype(int)
+        hmm_df["end"] = hmm_df["end"].str.strip().astype(int)
+        hmm_df["strand"] = hmm_df["strand"].str.strip().astype(int)
+        # And remove the remaining, unused columns
+        hmm_df.drop(["nothing", "info"], axis=1)
 
         # Add columns
         hmm_df["Acc"] = [re.sub("_[0-9]*$", "", x) for x in hmm_df["ORF"]]
@@ -196,7 +287,7 @@ class HMMER(object):
     def read_hmm(self):
         try:
             self.hmm_df = pd.read_csv(self.out + "hmmer.tab", sep="\t")
-        except:
+        except Exception:
             logging.error("No matches to Cas HMMs")
             sys.exit()
 
@@ -217,59 +308,3 @@ class HMMER(object):
             # Pick best hit
             self.hmm_df.sort_values("score", ascending=False, inplace=True)
             self.hmm_df.drop_duplicates("ORF", inplace=True)
-
-    def run_custom_hmm(self):
-
-        if self.customhmm != "":
-            logging.info("Running HMMER against custom HMM profiles")
-
-            with open(self.out + "hmmer_custom.log", "a") as hmmer_log:
-                subprocess.run(
-                    [
-                        "hmmsearch",
-                        "--tblout",
-                        self.out + "hmmer_custom.tab",
-                        "--cpu",
-                        str(self.threads),
-                        self.customhmm,
-                        self.prot_path,
-                    ],
-                    stdout=subprocess.DEVNULL,
-                    stderr=hmmer_log,
-                )
-
-    def load_custom_hmm(self):
-
-        if self.customhmm != "":
-
-            # Check if successful
-            if not os.path.isfile(self.out + "hmmer_custom.tab"):
-                logging.error("HMMER failed running on the custom HMM database")
-                sys.exit()
-
-            # Load
-            self.custom_hmm_df = pd.read_csv(
-                self.out + "hmmer_custom.tab",
-                sep="\s+",
-                comment="#",
-                header=None,
-                usecols=(0, 2, 3, 4, 5),
-                names=("Target", "Query", "Acc", "E-value", "Score"),
-            )
-
-            # Remove low E-value hits
-            self.custom_hmm_df = self.custom_hmm_df[
-                self.custom_hmm_df["E-value"] < self.oev
-            ]
-
-            # Pick best hit
-            self.custom_hmm_df.sort_values("Score", ascending=False, inplace=True)
-            self.custom_hmm_df.drop_duplicates("Target", inplace=True)
-
-            # New columns
-            self.custom_hmm_df["Contig"] = [
-                re.sub("_[0-9]*$", "", x) for x in self.custom_hmm_df["Target"]
-            ]
-            self.custom_hmm_df["Pos"] = [
-                int(re.sub(".*_", "", x)) for x in self.custom_hmm_df["Target"]
-            ]

@@ -1,12 +1,16 @@
-__pycache__/
-*.egg
-*.egg-info
-dist/
-build/
-sdist/
-setup.cfg
-bld.bat
-meta.yaml
-conda_builds/
-*.txt
-*.code-workspace
+# Ignore everything
+/*
+
+# Except what is useful for the repository
+!/bin
+!/cctyper
+!/data
+/data/*/
+!/img
+!.gitignore
+!build.sh
+!dev_env.yaml
+!pyproject.toml
+!LICENSE
+!README.md
+!setup.py

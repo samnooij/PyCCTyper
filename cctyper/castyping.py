@@ -2,11 +2,9 @@
 
 import re
 import logging
-import sys
 
 import numpy as np
 import pandas as pd
-import multiprocessing as mp
 
 from itertools import chain
 from scipy import ndimage
@@ -227,8 +225,9 @@ class Typer(object):
             lambda x: any([i in x["Hmm"] for i in adapt_genes]), axis=1
         )
 
-        interf_strands = set(tmp.loc[tmp["Interf"] == True, "strand"])
-        adapt_strands = set(tmp.loc[tmp["Adapt"] == True, "strand"])
+        # Inferf and Adapt are boolean: it should select only the ones that are True
+        interf_strands = set(tmp.loc[tmp["Interf"], "strand"])
+        adapt_strands = set(tmp.loc[tmp["Adapt"], "strand"])
 
         if len(interf_strands) == 1:
             interf_strand = interf_strands.pop()
