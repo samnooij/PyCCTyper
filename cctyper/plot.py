@@ -336,30 +336,13 @@ class Map(object):
         names = list(add_these["Pos"])
         puts = list((False,) * len(add_starts))
 
-        if self.customhmm != "" and len(self.custom_hmm_df) > 0:
-            # Add custom
-            hmm_contig = self.custom_hmm_df[self.custom_hmm_df["Contig"] == contig]
-            add_custom = [x in list(hmm_contig["Pos"]) for x in list(add_these["Pos"])]
-            custom_names = [
-                list(hmm_contig[hmm_contig["Pos"] == x]["Query"])
-                for x in list(add_these["Pos"])
-            ]
-            custom_names = [x[0] if len(x) > 0 else x for x in custom_names]
-            names = [
-                x[0] if not x[1] else x[2] for x in zip(names, add_custom, custom_names)
-            ]
-        else:
-            add_custom = puts
-
         # Add putative
         try:
             hmm_contig = self.hmm_df_raw[self.hmm_df_raw["Acc"] == contig]
             add_putative = [
                 x in list(hmm_contig["Pos"]) for x in list(add_these["Pos"])
             ]
-            add_putative = [
-                x[0] if not x[1] else False for x in zip(add_putative, add_custom)
-            ]
+            add_putative = [x[0] if not x[1] else False for x in add_putative]
             put_names = [
                 list(hmm_contig[hmm_contig["Pos"] == x]["Hmm"])
                 for x in list(add_these["Pos"])

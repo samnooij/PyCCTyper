@@ -90,7 +90,10 @@ class CRISPRCas(object):
 
                     # Find distances between operon and crisprs
                     dists = dist_ll(
-                        (int(cas_operon["Start"]), int(cas_operon["End"])),
+                        (
+                            int(cas_operon["Start"].iloc[0]),
+                            int(cas_operon["End"].iloc[0]),
+                        ),
                         zip(crispr_sub["Start"], crispr_sub["End"]),
                         seq_size,
                         circ_op,

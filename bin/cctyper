@@ -202,12 +202,6 @@ app.add_argument(
     type=int,
 )
 app.add_argument(
-    "--custom_hmm",
-    help="Path to custom HMM database to decorate plot. Warning: This overwrites plotting of low-quality matches to Cas HMMs",
-    default="",
-    type=str,
-)
-app.add_argument(
     "--no_plot", help="Do not draw a map of CRISPR-Cas.", action="store_true"
 )
 app.add_argument("--no_grid", help="Do not add grid to plot.", action="store_true")

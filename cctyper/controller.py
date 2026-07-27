@@ -35,7 +35,6 @@ class Controller(object):
         self.nogrid = args.no_grid
         self.expand = args.expand
         self.simplelog = args.simplelog
-        self.customhmm = args.custom_hmm
         self.repeat_id = args.repeat_id
         self.spacer_id = args.spacer_id
         self.spacer_sem = args.spacer_sem
@@ -171,13 +170,6 @@ class Controller(object):
             if self.num_headers:
                 os.remove(self.out + "fixed_input.fna")
 
-            if os.stat(self.out + "hmmer.log").st_size == 0:
-                os.remove(self.out + "hmmer.log")
-
-            if self.customhmm != "":
-                if os.stat(self.out + "hmmer_custom.log").st_size == 0:
-                    os.remove(self.out + "hmmer_custom.log")
-
             if not self.keep_tmp:
 
                 logging.info("Removing temporary files")
@@ -205,7 +197,7 @@ class Controller(object):
                 sys.exit()
 
         self.scoring = os.path.join(self.db, "CasScoring.csv")
-        self.pdir = os.path.join(self.db, "Profiles", "")
+        self.pdir = os.path.join(self.db, "pyhmmer_profiles", "")
         self.xgb = os.path.join(self.db, "xgb_repeats.model")
         self.typedict = os.path.join(self.db, "type_dict.tab")
         self.cutoffdb = os.path.join(self.db, "cutoffs.tab")
