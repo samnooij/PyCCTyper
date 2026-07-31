@@ -108,8 +108,24 @@ built into CCTyper consecutively. The workflow can then be as follows:
 4. Store and check results
 5. Repeat!
 
-(Keep a record of all the commands as shell script and put that in a
-markdown file for easy reference!)
+Example code:
+
+```bash
+git checkout main
+pip install .
+/usr/bin/time -v cctyper test_data/100_campys.fasta results/100_campy-main-4\
+ -t 4 --simplelog --db data | tee log/100_campy-main-4.log
+
+git checkout pyrodigal
+pip install .
+/usr/bin/time -v cctyper test_data/100_campys.fasta results/100_campy-pyrodigal-4\
+ -t 4 --simplelog --db data | tee log/100_campy-pyrodigal-4.log
+
+pip checkout pyhmmer
+pip install .
+/usr/bin/time -v cctyper test_data/100_campys.fasta results/100_campy-pyhmmer-4\
+ -t 4 --simplelog --db data | tee log/100_campy-pyhmmer-4.log
+```
 
 The results should be saved: both log files and output files, so that
 they may be reviewed.
@@ -123,7 +139,7 @@ and visualise these in R and make some stacked bar plots that allow easy
 comparison between runtimes per analysis step.
 These may be stored in Git, and/or archived on Zenodo.
 
-See original documentation below:
+_See original documentation below:_
 
 -----
 
