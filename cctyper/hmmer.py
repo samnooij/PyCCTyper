@@ -4,7 +4,6 @@ import logging
 import pyhmmer
 import re
 import glob
-import tqdm
 import collections
 
 import pandas as pd
@@ -35,9 +34,14 @@ class HMMER(object):
         self.parse_hmm()
 
     # Run pyHMMER and parse required information
-    def hmmsearch(self, progress=False):
+    def hmmsearch(self):
 
+        hmms = []
         hmm_files = list(Path(self.pdir).glob("*.hmm"))
+        for hmm_file in hmm_files:
+            with pyhmmer.plan7.HMMFile(hmm_file) as hmmfile:
+                hmm = hmmfile.read()
+            hmms.append(hmm)
 
         Result = collections.namedtuple(
             "Result",
@@ -137,25 +141,8 @@ class HMMER(object):
                             )
                         )
 
-        if progress:
-            for hmm_file in tqdm.tqdm(hmm_files):
-                logging.debug("Running HMMER against " + hmm_file.stem)
-
-                with pyhmmer.plan7.HMMFile(hmm_file) as hmmfile:
-                    for hits in pyhmmer.hmmsearch(
-                        hmmfile, sequences, cpus=self.threads
-                    ):
-                        collect_results(hits=hits)
-
-        else:
-            for hmm_file in hmm_files:
-                logging.debug("Running HMMER against " + hmm_file.stem)
-
-                with pyhmmer.plan7.HMMFile(hmm_file) as hmmfile:
-                    for hits in pyhmmer.hmmsearch(
-                        hmmfile, sequences, cpus=self.threads
-                    ):
-                        collect_results(hits=hits)
+        for hits in pyhmmer.hmmer.hmmsearch(hmms, sequences, cpus=self.threads):
+            collect_results(hits=hits)
 
         result_df = pd.DataFrame(result_list, columns=Result._fields)
 
@@ -169,10 +156,7 @@ class HMMER(object):
         # Make dir
         os.mkdir(self.out + "hmmer")
         # Each HMM
-        if self.lvl == "DEBUG" or self.simplelog:
-            hmm_df = self.hmmsearch()
-        else:
-            hmm_df = self.hmmsearch(progress=True)
+        hmm_df = self.hmmsearch()
 
         logging.info("Write pyHMMER output to file")
         hmm_df.to_csv(
