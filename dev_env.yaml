@@ -18,7 +18,7 @@ dependencies:
 - wget=1.25.0
 - hmmer=3.4
 - prodigal=2.6.2
-- pyrodigal=3.7
+- pyrodigal=3.7.1
 - minced=0.4.2
 - seqkit=2.13.0
 - pip:
