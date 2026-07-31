@@ -4,6 +4,7 @@ import logging
 import pyhmmer
 import re
 import glob
+import tqdm
 import collections
 
 import pandas as pd
@@ -34,7 +35,7 @@ class HMMER(object):
         self.parse_hmm()
 
     # Run pyHMMER and parse required information
-    def hmmsearch(self):
+    def hmmsearch(self, progress=bool):
 
         hmms = []
         hmm_files = list(Path(self.pdir).glob("*.hmm"))
@@ -141,8 +142,15 @@ class HMMER(object):
                             )
                         )
 
-        for hits in pyhmmer.hmmer.hmmsearch(hmms, sequences, cpus=self.threads):
-            collect_results(hits=hits)
+        if progress:
+            for hits in tqdm.tqdm(
+                pyhmmer.hmmer.hmmsearch(hmms, sequences, cpus=self.threads),
+                total=len(hmms),
+            ):
+                collect_results(hits=hits)
+        else:
+            for hits in pyhmmer.hmmer.hmmsearch(hmms, sequences, cpus=self.threads):
+                collect_results(hits=hits)
 
         result_df = pd.DataFrame(result_list, columns=Result._fields)
 
@@ -156,7 +164,10 @@ class HMMER(object):
         # Make dir
         os.mkdir(self.out + "hmmer")
         # Each HMM
-        hmm_df = self.hmmsearch()
+        if self.lvl == "DEBUG" or self.simplelog:
+            hmm_df = self.hmmsearch(progress=False)
+        else:
+            hmm_df = self.hmmsearch(progress=True)
 
         logging.info("Write pyHMMER output to file")
         hmm_df.to_csv(

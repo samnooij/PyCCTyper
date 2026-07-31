@@ -31,6 +31,7 @@ setuptools.setup(
         "multiprocess >= 0.70.9",
         "scikit-learn >= 0.22.0",
         "xgboost >= 1.4",
+        "tqdm >= 4",
         "drawSvg >= 1.8.0",
         "setuptools",
     ],
