@@ -61,7 +61,7 @@ class Prodigal(object):
 
         genes = pd.read_csv(
             self.out + "genes.tab",
-            sep="\s+",
+            sep=r"\s+",
             header=None,
             usecols=(0, 2, 4, 6),
             names=("Contig", "Start", "End", "Strand"),

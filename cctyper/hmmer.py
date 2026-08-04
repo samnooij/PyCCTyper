@@ -3,7 +3,6 @@ import sys
 import logging
 import pyhmmer
 import re
-import glob
 import tqdm
 import collections
 
@@ -87,7 +86,7 @@ class HMMER(object):
                     bitscore = hit.score
                     domains = len(hit.domains)
                     for i in range(domains):
-                        domain_number = i + 1
+                        domain_number = i + 1  # Because it counts 0-based
                         target_length = hit.domains[i].alignment.target_length
                         hmm_length = hit.domains[i].alignment.hmm_length
 
@@ -100,18 +99,11 @@ class HMMER(object):
                         env_start = hit.domains[i].env_from
                         env_end = hit.domains[i].env_to
 
-                        sequence_coverage = (
-                            hit.domains[i].alignment.target_to
-                            + 1
-                            - hit.domains[i].alignment.target_from
-                        ) / target_length
-                        hmm_coverage = (hmm_end + 1 - hmm_start) / target_length
-
                         # PyHMMER does not record strand by default; only in the 'long targets pipeline', which does
                         # not support the cpus= option!
                         # However, Pyrodigal saves this in the FASTA ID, which is stored as hit description!
                         strand = hit.description.split("#")[3].strip(" ")
-                        if strand == None:
+                        if strand is None:
                             strand = 0
 
                         result_list.append(
@@ -125,7 +117,7 @@ class HMMER(object):
                                 evalue,
                                 bitscore,
                                 hit.bias,
-                                i,
+                                domain_number,
                                 domains,
                                 hit.domains[i].c_evalue,
                                 hit.domains[i].i_evalue,
@@ -295,7 +287,7 @@ class HMMER(object):
     def read_hmm(self):
         try:
             self.hmm_df = pd.read_csv(self.out + "hmmer.tab", sep="\t")
-        except:
+        except Exception:
             logging.error("No matches to Cas HMMs")
             sys.exit()
 

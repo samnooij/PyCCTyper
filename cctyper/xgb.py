@@ -124,7 +124,7 @@ class XGB(object):
                 xgb.DMatrix(z_df),
                 iteration_range=(0, int(self.bst.attr("best_iteration"))),
             )
-        except:
+        except Exception:
             logging.error("XGBoost model incompatible")
             sys.exit()
 

@@ -3,11 +3,11 @@ import logging
 import sys
 import shutil
 import json
-import pkg_resources
 import subprocess
 
 import pandas as pd
 
+from importlib.metadata import version
 from Bio import SeqIO
 
 
@@ -70,16 +70,13 @@ class Controller(object):
                 datefmt="%Y-%m-%d %H:%M:%S",
                 level=self.lvl,
             )
-        logging.info(
-            "Running CRISPRCasTyper version {}".format(
-                pkg_resources.require("cctyper")[0].version
-            )
-        )
+        logging.info(f'Running CRISPRCasTyper version {version("cctyper")}')
 
         # kmer warning
         if self.kmer != 4:
             logging.warning(
-                "kmer argument should only be used if the repeatTyper model is trained with a different kmer than 4."
+                "kmer argument should only be used if the repeatTyper model"
+                " is trained with a different kmer than 4."
             )
 
         # Force consistency
@@ -144,9 +141,9 @@ class Controller(object):
         self.num_headers = False
         for i in self.len_dict.keys():
             try:
-                dump = float(i)
+                float(i)
                 self.num_headers = True
-            except:
+            except ValueError:
                 pass
 
         if self.num_headers:
@@ -192,7 +189,7 @@ class Controller(object):
         if self.db == "":
             try:
                 self.db = os.environ["CCTYPER_DB"]
-            except:
+            except Exception:
                 logging.error("Could not find database directory")
                 sys.exit()
 
@@ -209,7 +206,7 @@ class Controller(object):
         if os.path.isfile(self.scoring):
             try:
                 self.scores = pd.read_csv(self.scoring, sep=",")
-            except:
+            except Exception:
                 logging.error("CasScoring table could not be loaded")
                 sys.exit()
         else:

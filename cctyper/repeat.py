@@ -25,7 +25,7 @@ class RepeatTyper(object):
                 DB_PATH = os.environ["CCTYPER_DB"]
                 self.xgb = os.path.join(DB_PATH, "xgb_repeats.model")
                 self.typedict = os.path.join(DB_PATH, "type_dict.tab")
-            except:
+            except Exception:
                 print("Could not find database directory")
                 sys.exit()
 
