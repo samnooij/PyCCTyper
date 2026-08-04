@@ -24,10 +24,15 @@ class Map(object):
                     col = "#dd1424"
                 elif "Cas3-Cas2" in name:
                     col = "#009b77"
-                elif any([True if x in name else False for x in self.interf_genes]):
+                elif any(
+                    [True if x in name else False for x in self.interf_genes]
+                ):
                     col = "#efc050"
                 elif any(
-                    [True if x in name + "_" else False for x in self.adapt_genes]
+                    [
+                        True if x in name + "_" else False
+                        for x in self.adapt_genes
+                    ]
                 ):
                     col = "#5b5ea6"
                 else:
@@ -239,12 +244,17 @@ class Map(object):
                 or row["Operon"] in self.cc_circ_end.keys()
             ):
                 start = min(
-                    start, min(cca[cca["CRISPR"].isin(row["CRISPRs"])]["Start"])
+                    start,
+                    min(cca[cca["CRISPR"].isin(row["CRISPRs"])]["Start"]),
                 )
-                end = max(end, max(cca[cca["CRISPR"].isin(row["CRISPRs"])]["End"]))
+                end = max(
+                    end, max(cca[cca["CRISPR"].isin(row["CRISPRs"])]["End"])
+                )
             # If CRISPR-Cas span ends and array is in start of sequence
             if row["Operon"] in self.cc_circ_start.keys():
-                ccs = cca[cca["CRISPR"].isin(self.cc_circ_start[row["Operon"]])]
+                ccs = cca[
+                    cca["CRISPR"].isin(self.cc_circ_start[row["Operon"]])
+                ]
                 end = max(ccs["End"])
                 span_ends = True
             # If CRISPR-Cas span ends and array is in end of sequence
@@ -297,7 +307,8 @@ class Map(object):
             missing_cas = [x for x in all_cas if x not in pos]
 
         add_these = self.genes[
-            (self.genes["Contig"] == contig) & (self.genes["Pos"].isin(missing_cas))
+            (self.genes["Contig"] == contig)
+            & (self.genes["Pos"].isin(missing_cas))
         ]
 
         if span_ends:
@@ -305,7 +316,9 @@ class Map(object):
                 (add_these["Start"] > startPos - self.expand)
                 | (add_these["End"] < endPos + self.expand)
             ]
-            which_end = [x > (endPos + self.expand) for x in list(add_these["Start"])]
+            which_end = [
+                x > (endPos + self.expand) for x in list(add_these["Start"])
+            ]
             add_starts = [
                 (
                     self.expand + 1 + x[0] - startPos
@@ -328,9 +341,12 @@ class Map(object):
                 & (add_these["End"] < endPos + self.expand)
             ]
             add_starts = [
-                self.expand + 1 + x - startPos for x in list(add_these["Start"])
+                self.expand + 1 + x - startPos
+                for x in list(add_these["Start"])
             ]
-            add_ends = [self.expand + 1 + x - startPos for x in list(add_these["End"])]
+            add_ends = [
+                self.expand + 1 + x - startPos for x in list(add_these["End"])
+            ]
 
         names = list(add_these["Pos"])
         puts = list((False,) * len(add_starts))
@@ -347,9 +363,12 @@ class Map(object):
                 for x in list(add_these["Pos"])
             ]
             put_names = [x[0] if len(x) > 0 else x for x in put_names]
-            puts = [x[0] if not x[1] else True for x in zip(puts, add_putative)]
+            puts = [
+                x[0] if not x[1] else True for x in zip(puts, add_putative)
+            ]
             names = [
-                x[0] if not x[1] else x[2] for x in zip(names, add_putative, put_names)
+                x[0] if not x[1] else x[2]
+                for x in zip(names, add_putative, put_names)
             ]
         except:
             pass
@@ -360,7 +379,9 @@ class Map(object):
 
         return expand_list
 
-    def expandCris(self, contig, crisprs, startPos, endPos, seq_size, span_ends):
+    def expandCris(
+        self, contig, crisprs, startPos, endPos, seq_size, span_ends
+    ):
 
         add_crisp = self.crisprsall[self.crisprsall["Contig"] == contig]
         add_crisp = add_crisp[~add_crisp["CRISPR"].isin(crisprs)]
@@ -379,10 +400,12 @@ class Map(object):
         if len(add_crisp) > 0:
             crisp_lst = list(add_crisp["CRISPR"])
             startsCris = [
-                list(add_crisp[add_crisp["CRISPR"] == x]["Start"])[0] for x in crisp_lst
+                list(add_crisp[add_crisp["CRISPR"] == x]["Start"])[0]
+                for x in crisp_lst
             ]
             endsCris = [
-                list(add_crisp[add_crisp["CRISPR"] == x]["End"])[0] for x in crisp_lst
+                list(add_crisp[add_crisp["CRISPR"] == x]["End"])[0]
+                for x in crisp_lst
             ]
             nameCris = [
                 list(add_crisp[add_crisp["CRISPR"] == x]["Prediction"])[0]
@@ -412,7 +435,9 @@ class Map(object):
                     for x in zip(endsCris, which_end)
                 ]
             else:
-                startsCris = [self.expand + 1 + x - startPos for x in startsCris]
+                startsCris = [
+                    self.expand + 1 + x - startPos for x in startsCris
+                ]
                 endsCris = [self.expand + 1 + x - startPos for x in endsCris]
 
             return list(zip(startsCris, endsCris, nameCris, repsCris))
@@ -434,7 +459,9 @@ class Map(object):
                 ]
             except:
                 cas_good = self.preddf[
-                    ~self.preddf["Prediction"].isin(["False", "Ambiguous", "Partial"])
+                    ~self.preddf["Prediction"].isin(
+                        ["False", "Ambiguous", "Partial"]
+                    )
                 ]
                 casAmbiOrph = pd.concat([cas_good, cas_ambi])
             total += len(casAmbiOrph)
@@ -481,7 +508,10 @@ class Map(object):
             )
 
             width = self.get_longest(
-                self.orphan_crispr, casAmbiOrph, self.crispr_cas, self.crisprsall
+                self.orphan_crispr,
+                casAmbiOrph,
+                self.crispr_cas,
+                self.crisprsall,
             )
 
             self.genes = pd.read_csv(self.out + "genes.tab", sep="\t")
@@ -539,40 +569,57 @@ class Map(object):
 
                     # Get data
                     contig = list(
-                        self.crispr_cas[self.crispr_cas["Operon"] == i]["Contig"]
+                        self.crispr_cas[self.crispr_cas["Operon"] == i][
+                            "Contig"
+                        ]
                     )[0]
                     prediction = list(
-                        self.crispr_cas[self.crispr_cas["Operon"] == i]["Prediction"]
+                        self.crispr_cas[self.crispr_cas["Operon"] == i][
+                            "Prediction"
+                        ]
                     )[0]
 
                     # Cas
-                    posCas = list(self.preddf[self.preddf["Operon"] == i]["Positions"])[
-                        0
-                    ]
-                    nameCas = list(self.preddf[self.preddf["Operon"] == i]["Genes"])[0]
+                    posCas = list(
+                        self.preddf[self.preddf["Operon"] == i]["Positions"]
+                    )[0]
+                    nameCas = list(
+                        self.preddf[self.preddf["Operon"] == i]["Genes"]
+                    )[0]
                     hmmSub = self.hmm_df[self.hmm_df["Acc"] == contig]
                     startsCas = [
-                        list(hmmSub[hmmSub["Pos"] == x]["start"])[0] for x in posCas
+                        list(hmmSub[hmmSub["Pos"] == x]["start"])[0]
+                        for x in posCas
                     ]
                     endsCas = [
-                        list(hmmSub[hmmSub["Pos"] == x]["end"])[0] for x in posCas
+                        list(hmmSub[hmmSub["Pos"] == x]["end"])[0]
+                        for x in posCas
                     ]
                     strands = [
-                        list(hmmSub[hmmSub["Pos"] == x]["strand"])[0] for x in posCas
+                        list(hmmSub[hmmSub["Pos"] == x]["strand"])[0]
+                        for x in posCas
                     ]
 
                     # Crisprs
                     crisprs = list(
-                        self.crispr_cas[self.crispr_cas["Operon"] == i]["CRISPRs"]
+                        self.crispr_cas[self.crispr_cas["Operon"] == i][
+                            "CRISPRs"
+                        ]
                     )[0]
                     startsCris = [
-                        list(self.crisprsall[self.crisprsall["CRISPR"] == x]["Start"])[
-                            0
-                        ]
+                        list(
+                            self.crisprsall[self.crisprsall["CRISPR"] == x][
+                                "Start"
+                            ]
+                        )[0]
                         for x in crisprs
                     ]
                     endsCris = [
-                        list(self.crisprsall[self.crisprsall["CRISPR"] == x]["End"])[0]
+                        list(
+                            self.crisprsall[self.crisprsall["CRISPR"] == x][
+                                "End"
+                            ]
+                        )[0]
                         for x in crisprs
                     ]
                     nameCris = [
@@ -585,7 +632,9 @@ class Map(object):
                     ]
                     repsCris = [
                         list(
-                            self.crisprsall[self.crisprsall["CRISPR"] == x]["N_repeats"]
+                            self.crisprsall[self.crisprsall["CRISPR"] == x][
+                                "N_repeats"
+                            ]
                         )[0]
                         for x in crisprs
                     ]
@@ -639,12 +688,14 @@ class Map(object):
                                 + (self.expand + 1 + seq_size - startPos)
                                 * self.scale
                                 / 50,
-                                self.imheight - (k * 20 * self.scale - 5 * self.scale),
+                                self.imheight
+                                - (k * 20 * self.scale - 5 * self.scale),
                                 10
                                 + (self.expand + 1 + seq_size - startPos)
                                 * self.scale
                                 / 50,
-                                self.imheight - (k * 20 * self.scale + 10 * self.scale),
+                                self.imheight
+                                - (k * 20 * self.scale + 10 * self.scale),
                                 stroke="black",
                                 stroke_width=5,
                                 fill="none",
@@ -652,12 +703,18 @@ class Map(object):
                         )
 
                     else:
-                        startsCas = [self.expand + 1 + x - startPos for x in startsCas]
-                        endsCas = [self.expand + 1 + x - startPos for x in endsCas]
+                        startsCas = [
+                            self.expand + 1 + x - startPos for x in startsCas
+                        ]
+                        endsCas = [
+                            self.expand + 1 + x - startPos for x in endsCas
+                        ]
                         startsCris = [
                             self.expand + 1 + x - startPos for x in startsCris
                         ]
-                        endsCris = [self.expand + 1 + x - startPos for x in endsCris]
+                        endsCris = [
+                            self.expand + 1 + x - startPos for x in endsCris
+                        ]
 
                     # Draw
                     cas_list = list(
@@ -703,33 +760,55 @@ class Map(object):
                     logging.debug("Plotting " + i)
 
                     # Get data
-                    contig = list(casAmbiOrph[casAmbiOrph["Operon"] == i]["Contig"])[0]
-                    pos = list(casAmbiOrph[casAmbiOrph["Operon"] == i]["Positions"])[0]
-                    casName = list(casAmbiOrph[casAmbiOrph["Operon"] == i]["Genes"])[0]
+                    contig = list(
+                        casAmbiOrph[casAmbiOrph["Operon"] == i]["Contig"]
+                    )[0]
+                    pos = list(
+                        casAmbiOrph[casAmbiOrph["Operon"] == i]["Positions"]
+                    )[0]
+                    casName = list(
+                        casAmbiOrph[casAmbiOrph["Operon"] == i]["Genes"]
+                    )[0]
                     hmmSub = self.hmm_df[self.hmm_df["Acc"] == contig]
-                    starts = [list(hmmSub[hmmSub["Pos"] == x]["start"])[0] for x in pos]
-                    ends = [list(hmmSub[hmmSub["Pos"] == x]["end"])[0] for x in pos]
+                    starts = [
+                        list(hmmSub[hmmSub["Pos"] == x]["start"])[0]
+                        for x in pos
+                    ]
+                    ends = [
+                        list(hmmSub[hmmSub["Pos"] == x]["end"])[0] for x in pos
+                    ]
                     strands = [
-                        list(hmmSub[hmmSub["Pos"] == x]["strand"])[0] for x in pos
+                        list(hmmSub[hmmSub["Pos"] == x]["strand"])[0]
+                        for x in pos
                     ]
 
                     # Draw name
                     self.draw_name(
                         k,
-                        list(casAmbiOrph[casAmbiOrph["Operon"] == i]["Prediction"])[0],
+                        list(
+                            casAmbiOrph[casAmbiOrph["Operon"] == i][
+                                "Prediction"
+                            ]
+                        )[0],
                         i,
                         min(starts),
                         max(ends),
                     )
 
                     # Adjust positions
-                    startPos = list(casAmbiOrph[casAmbiOrph["Operon"] == i]["Start"])[0]
-                    endPos = list(casAmbiOrph[casAmbiOrph["Operon"] == i]["End"])[0]
+                    startPos = list(
+                        casAmbiOrph[casAmbiOrph["Operon"] == i]["Start"]
+                    )[0]
+                    endPos = list(
+                        casAmbiOrph[casAmbiOrph["Operon"] == i]["End"]
+                    )[0]
                     seq_size = self.len_dict[contig]
 
                     if startPos < endPos:
                         span_ends = False
-                        starts = [self.expand + 1 + x - startPos for x in starts]
+                        starts = [
+                            self.expand + 1 + x - startPos for x in starts
+                        ]
                         ends = [self.expand + 1 + x - startPos for x in ends]
                     else:
                         span_ends = True
@@ -755,12 +834,14 @@ class Map(object):
                                 + (self.expand + 1 + seq_size - startPos)
                                 * self.scale
                                 / 50,
-                                self.imheight - (self.scale * k * 20 - 5 * self.scale),
+                                self.imheight
+                                - (self.scale * k * 20 - 5 * self.scale),
                                 10
                                 + (self.expand + 1 + seq_size - startPos)
                                 * self.scale
                                 / 50,
-                                self.imheight - (self.scale * k * 20 + 10 * self.scale),
+                                self.imheight
+                                - (self.scale * k * 20 + 10 * self.scale),
                                 stroke="black",
                                 stroke_width=5,
                                 fill="none",
@@ -802,7 +883,9 @@ class Map(object):
 
                     # Get data
                     contig = list(
-                        self.orphan_crispr[self.orphan_crispr["CRISPR"] == i]["Contig"]
+                        self.orphan_crispr[self.orphan_crispr["CRISPR"] == i][
+                            "Contig"
+                        ]
                     )[0]
                     pred = list(
                         self.orphan_crispr[self.orphan_crispr["CRISPR"] == i][
@@ -810,10 +893,14 @@ class Map(object):
                         ]
                     )[0]
                     start = list(
-                        self.orphan_crispr[self.orphan_crispr["CRISPR"] == i]["Start"]
+                        self.orphan_crispr[self.orphan_crispr["CRISPR"] == i][
+                            "Start"
+                        ]
                     )[0]
                     end = list(
-                        self.orphan_crispr[self.orphan_crispr["CRISPR"] == i]["End"]
+                        self.orphan_crispr[self.orphan_crispr["CRISPR"] == i][
+                            "End"
+                        ]
                     )[0]
                     reps = list(
                         self.orphan_crispr[self.orphan_crispr["CRISPR"] == i][
@@ -829,18 +916,27 @@ class Map(object):
                             contig, [0], start, end, 0, False, True
                         )
                         expand_list = sorted(expand_list, key=lambda x: x[0])
-                        expand_cris = self.expandCris(contig, [i], start, end, 0, False)
+                        expand_cris = self.expandCris(
+                            contig, [i], start, end, 0, False
+                        )
                         self.draw_system(expand_list, expand_cris, k)
 
                     # Draw
                     self.draw_array(
-                        self.expand + 1, self.expand + 1 + end - start, pred, k, 1, reps
+                        self.expand + 1,
+                        self.expand + 1 + end - start,
+                        pred,
+                        k,
+                        1,
+                        reps,
                     )
                     self.draw_name(k, pred, i, start, end)
 
             self.im.saveSvg(self.out + "plot.svg")
             try:
-                self.im.setPixelScale(int(round(self.im.width / (250 * self.scale))))
+                self.im.setPixelScale(
+                    int(round(self.im.width / (250 * self.scale)))
+                )
                 self.im.savePng(self.out + "plot.png")
             except:
                 logging.warning("PNG plot failed. Trying lower resolution")

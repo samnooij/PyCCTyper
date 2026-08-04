@@ -61,16 +61,22 @@ class CRISPR(object):
                 n_samp = len(seqs)
             sqr = random.sample(range(len(seqs)), n_samp)
         idents = Parallel(n_jobs=threads)(
-            delayed(self.identity)(k, l, seqs) for k in sqr for l in sqr if k > l
+            delayed(self.identity)(k, l, seqs)
+            for k in sqr
+            for l in sqr
+            if k > l
         )
         return st.mean(idents)
 
     def stats(self, threads, rep_id, spa_id, spa_sem):
         if len(self.spacers) > 1:
-            self.spacer_identity = round(self.identLoop(self.spacers, threads), 1)
+            self.spacer_identity = round(
+                self.identLoop(self.spacers, threads), 1
+            )
             self.spacer_len = round(st.mean([len(x) for x in self.spacers]), 1)
             self.spacer_sem = round(
-                st.stdev([len(x) for x in self.spacers]) / math.sqrt(len(self.spacers)),
+                st.stdev([len(x) for x in self.spacers])
+                / math.sqrt(len(self.spacers)),
                 1,
             )
         else:
@@ -137,7 +143,9 @@ class Minced(object):
         for ll in file:
             # Record sequence accession
             if ll.startswith("Sequence"):
-                sequence_current = re.sub(r"' \(.*", "", re.sub("Sequence '", "", ll))
+                sequence_current = re.sub(
+                    r"' \(.*", "", re.sub("Sequence '", "", ll)
+                )
             # Create instance of CRISPR and add positions
             if ll.startswith("CRISPR"):
                 crisp_tmp = CRISPR(sequence_current, self.exact_stats)
@@ -157,7 +165,10 @@ class Minced(object):
             if ll.startswith("Repeats"):
                 crisp_tmp.getConsensus()
                 crisp_tmp.stats(
-                    self.threads, self.repeat_id, self.spacer_id, self.spacer_sem
+                    self.threads,
+                    self.repeat_id,
+                    self.spacer_id,
+                    self.spacer_sem,
                 )
                 crisprs.append(crisp_tmp)
 

@@ -110,10 +110,12 @@ class RepeatMatch(object):
         if len(self.df) > 0:
             # Create new columns
             self.df["Min"] = [
-                min(x, y) for x, y in zip(self.df["Acc_start"], self.df["Acc_end"])
+                min(x, y)
+                for x, y in zip(self.df["Acc_start"], self.df["Acc_end"])
             ]
             self.df["Max"] = [
-                max(x, y) for x, y in zip(self.df["Acc_start"], self.df["Acc_end"])
+                max(x, y)
+                for x, y in zip(self.df["Acc_start"], self.df["Acc_end"])
             ]
 
             # Keep only best matches if overlapping
@@ -125,7 +127,9 @@ class RepeatMatch(object):
             # Cluster matches in arrays
             self.cluster_adj()
 
-            count_dict = self.df_cluster.groupby("Cluster")["Cluster"].count().to_dict()
+            count_dict = (
+                self.df_cluster.groupby("Cluster")["Cluster"].count().to_dict()
+            )
 
             # At least 3 repeats
             cluster_array = [x for x in count_dict if count_dict[x] > 2]
@@ -263,7 +267,9 @@ class RepeatMatch(object):
             len(self.df_overlap.columns),
             "Sequence",
             self.df_overlap.apply(
-                lambda row: self.get_sequence(row["Acc"], row["Min"], row["Max"]),
+                lambda row: self.get_sequence(
+                    row["Acc"], row["Min"], row["Max"]
+                ),
                 axis=1,
             ),
         )
@@ -288,7 +294,8 @@ class RepeatMatch(object):
             # Get positions
             flank_start = self.flank_dict_pos[acc][0] - 1
             crisp_tmp.setPos(
-                str(min(tmp["Min"]) + flank_start), str(max(tmp["Max"]) + flank_start)
+                str(min(tmp["Min"]) + flank_start),
+                str(max(tmp["Max"]) + flank_start),
             )
 
             # Add repeats

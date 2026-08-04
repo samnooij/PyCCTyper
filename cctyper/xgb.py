@@ -41,7 +41,8 @@ class XGB(object):
         all_kmer_rev = [x.translate(self.comp_tab)[::-1] for x in all_kmer]
         can_kmer = list(
             it.compress(
-                all_kmer_rev, [not kf < kr for kf, kr in zip(all_kmer, all_kmer_rev)]
+                all_kmer_rev,
+                [not kf < kr for kf, kr in zip(all_kmer, all_kmer_rev)],
             )
         )
         can_kmer.sort()
@@ -88,9 +89,9 @@ class XGB(object):
                 df["Prediction"] = self.z_type
                 df["Subtype"] = self.z_type
                 df["Subtype_probability"] = self.z_max
-                df.loc[df.Subtype_probability < self.pred_prob, "Prediction"] = (
-                    "Unknown"
-                )
+                df.loc[
+                    df.Subtype_probability < self.pred_prob, "Prediction"
+                ] = "Unknown"
                 df["Subtype_probability"] = df["Subtype_probability"].round(3)
 
                 # We trust arrays with a known (predictable) repeat sequence
@@ -138,4 +139,8 @@ class XGB(object):
     def print_xgb(self):
 
         for i in range(len(self.repeats)):
-            print("{}\t{}\t{}".format(self.repeats[i], self.z_type[i], self.z_max[i]))
+            print(
+                "{}\t{}\t{}".format(
+                    self.repeats[i], self.z_type[i], self.z_max[i]
+                )
+            )

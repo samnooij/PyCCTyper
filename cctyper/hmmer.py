@@ -74,7 +74,9 @@ class HMMER(object):
 
         result_list = []
 
-        with pyhmmer.easel.SequenceFile(self.prot_path, digital=True) as seqs_file:
+        with pyhmmer.easel.SequenceFile(
+            self.prot_path, digital=True
+        ) as seqs_file:
             sequences = seqs_file.read_block()
 
         def collect_results(hits):
@@ -129,7 +131,9 @@ class HMMER(object):
                                 ali_end,
                                 env_start,
                                 env_end,
-                                hit.domains[i].alignment.posterior_probabilities,
+                                hit.domains[
+                                    i
+                                ].alignment.posterior_probabilities,
                                 hit.description,
                             )
                         )
@@ -141,7 +145,9 @@ class HMMER(object):
             ):
                 collect_results(hits=hits)
         else:
-            for hits in pyhmmer.hmmer.hmmsearch(hmms, sequences, cpus=self.threads):
+            for hits in pyhmmer.hmmer.hmmsearch(
+                hmms, sequences, cpus=self.threads
+            ):
                 collect_results(hits=hits)
 
         result_df = pd.DataFrame(result_list, columns=Result._fields)
