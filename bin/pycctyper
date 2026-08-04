@@ -13,8 +13,10 @@ from cctyper.crisprcas import CRISPRCas
 from cctyper.plot import Map
 from cctyper.blast import RepeatMatch
 
-########## Arguments ##########
-ap = argparse.ArgumentParser(description=f'CRISPRCasTyper version {version("cctyper")}')
+# ============ Arguments ============
+ap = argparse.ArgumentParser(
+    description=f'PyCCTyper version {version("pycctyper")}'
+)
 
 
 # Required
@@ -37,7 +39,8 @@ ap.add_argument(
     choices=["single", "meta"],
 )
 ap.add_argument(
-    "--circular", help="Input should be treated as circular.", action="store_true"
+    "--circular", help="Input should be treated as circular.",
+    action="store_true"
 )
 ap.add_argument(
     "--keep_tmp",
@@ -53,7 +56,8 @@ ap.add_argument(
 )
 ap.add_argument(
     "--redo_typing",
-    help="Redo the typing. Skip prodigal and HMMER and load the hmmer.tab from the output dir.",
+    help="Redo the typing. Skip prodigal and HMMER and load"
+    " the hmmer.tab from the output dir.",
     action="store_true",
 )
 ap.add_argument(
@@ -64,7 +68,8 @@ ap.add_argument(
 apd = ap.add_argument_group("data arguments")
 apd.add_argument(
     "--db",
-    help="Path to database. Only needed if CCTYPER_DB environment variable is not set.",
+    help="Path to database. Only needed if CCTYPER_DB environment variable"
+    " is not set.",
     default="",
     type=str,
 )
@@ -73,7 +78,8 @@ apd.add_argument(
 apt = ap.add_argument_group("cas arguments")
 apt.add_argument(
     "--dist",
-    help="Max allowed number of unknown genes between cas genes in operon [%(default)s].",
+    help="Max allowed number of unknown genes between cas genes"
+    " in operon [%(default)s].",
     default=3,
     type=int,
 )
@@ -100,13 +106,15 @@ apt.add_argument(
 apc = ap.add_argument_group("crispr arguments")
 apc.add_argument(
     "--ccd",
-    help="Distance (bp) threshold to connect Cas operons and CRISPR arrays [%(default)s].",
+    help="Distance (bp) threshold to connect Cas operons"
+    " and CRISPR arrays [%(default)s].",
     default=10000,
     type=int,
 )
 apc.add_argument(
     "--pred_prob",
-    help="Prediction probability cut-off for assigning subtype to CRISPR repeats [%(default)s].",
+    help="Prediction probability cut-off for assigning subtype"
+    " to CRISPR repeats [%(default)s].",
     default=0.75,
     type=float,
 )
@@ -118,30 +126,36 @@ apc.add_argument(
 )
 apc.add_argument(
     "--repeat_id",
-    help="Minimum average sequence identity between repeats for trusted arrays [%(default)s].",
+    help="Minimum average sequence identity between repeats"
+    " for trusted arrays [%(default)s].",
     default=70,
     type=int,
 )
 apc.add_argument(
     "--spacer_id",
-    help="Maximum average sequence identity between spacers for trusted arrays [%(default)s].",
+    help="Maximum average sequence identity between spacers"
+    " for trusted arrays [%(default)s].",
     default=55,
     type=int,
 )
 apc.add_argument(
     "--spacer_sem",
-    help="Maximum spacer length standard error of the mean for trusted arrays [%(default)s].",
+    help="Maximum spacer length standard error of the mean"
+    " for trusted arrays [%(default)s].",
     default=3.5,
     type=float,
 )
 apc.add_argument(
     "--exact_stats",
-    help="Repeat and spacer identity is exact (slow for large CRISPR) in contrast to approximate (default, fast, based on sample of repeats/spacers).",
+    help="Repeat and spacer identity is exact (slow for large CRISPR)"
+    " in contrast to approximate (default, fast, based on sample"
+    " of repeats/spacers).",
     action="store_true",
 )
 apc.add_argument(
     "--seed",
-    help="Seed for sampling when estimating CRISPR stats (see argument above) [%(default)s].",
+    help="Seed for sampling when estimating CRISPR stats"
+    " (see argument above) [%(default)s].",
     default=42,
     type=float,
 )
@@ -191,52 +205,55 @@ apc.add_argument(
 app = ap.add_argument_group("plotting arguments")
 app.add_argument(
     "--expand",
-    help="Expand operons with un-annotated genes. The value determines by how many bp in each end to expand. 0 only fills gaps [%(default)s].",
+    help="Expand operons with un-annotated genes. The value determines"
+    " by how many bp in each end to expand. 0 only fills gaps [%(default)s].",
     default=0,
     type=int,
 )
 app.add_argument(
     "--no_plot", help="Do not draw a map of CRISPR-Cas.", action="store_true"
 )
-app.add_argument("--no_grid", help="Do not add grid to plot.", action="store_true")
+app.add_argument(
+    "--no_grid", help="Do not add grid to plot.", action="store_true"
+    )
 
 # Workflow starts here
 
 
-########## Initialize ##########
+# ============ Initialize ============
 master = Controller(ap.parse_args())
 
-########## Prodigal ##########
+# ============ Prodigal ============
 proteins = Prodigal(master)
 proteins.run_prodigal()
 
-########## Hmmer ##########
+# ============ Hmmer ============
 hmmeri = HMMER(proteins)
 hmmeri.main_hmm()
 
-########## Operons ##########
+# ============ Operons ============
 castyper = Typer(hmmeri)
 castyper.typing()
 
-########## CRISPRs ##########
+# ============ CRISPRs ============
 crispr_obj = Minced(castyper)
 crispr_obj.run_minced()
 
-######### RepeatMatch ########
+# ============ RepeatMatch ============
 repmatch = RepeatMatch(crispr_obj)
 repmatch.run()
 
-########## RepeatType ########
+# ============ RepeatType ============
 repeatPred = XGB(repmatch)
 repeatPred.xgb_run()
 
-######### CRISPR-Cas ########
+# ============ CRISPR-Cas ============
 criscas = CRISPRCas(repeatPred)
 criscas.crisprcas()
 
-######### Plot ###########
+# ============ Plot ============
 plotting = Map(criscas)
 plotting.plot()
 
-######### Clean ###########
+# ============ Clean ============
 master.clean()
