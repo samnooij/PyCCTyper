@@ -70,7 +70,7 @@ class Controller(object):
                 datefmt="%Y-%m-%d %H:%M:%S",
                 level=self.lvl,
             )
-        logging.info(f'Running CRISPRCasTyper version {version("cctyper")}')
+        logging.info(f'Running PyCCTyper version {version("pycctyper")}')
 
         # kmer warning
         if self.kmer != 4:
@@ -148,10 +148,13 @@ class Controller(object):
 
         if self.num_headers:
             logging.warning(
-                "Numeric fasta headers detected. A prefix is added to the names"
+                "Numeric fasta headers detected."
+                " A prefix is added to the names"
             )
             new_fasta = open(self.out + "fixed_input.fna", "w")
-            subprocess.run(["sed", "s/^>/>Contig/", self.fasta], stdout=new_fasta)
+            subprocess.run(
+                ["sed", "s/^>/>Contig/", self.fasta], stdout=new_fasta
+            )
             new_fasta.close()
             self.fasta = self.out + "fixed_input.fna"
             self.len_dict = {
@@ -218,7 +221,8 @@ class Controller(object):
             for i in os.listdir(self.pdir):
                 if not i.lower().endswith(".hmm"):
                     logging.error(
-                        "There are non-HMM profiles in the HMM profile directory"
+                        "There are non-HMM profiles in the"
+                        " HMM profile directory"
                     )
                     sys.exit()
         else:

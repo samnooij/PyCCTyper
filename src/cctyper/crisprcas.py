@@ -56,7 +56,9 @@ class CRISPRCas(object):
                     self.out + "crisprs_putative.tab", sep="\t", index=False
                 )
             if len(crispr) > 0:
-                crispr.to_csv(self.out + "crisprs_orphan.tab", sep="\t", index=False)
+                crispr.to_csv(
+                    self.out + "crisprs_orphan.tab", sep="\t", index=False
+                )
 
         # Only if there is operons and crisprs
         if self.any_operon and self.any_crispr:
@@ -65,7 +67,9 @@ class CRISPRCas(object):
             # Load data
             cas = self.preddf
             cas = cas[~cas["Prediction"].isin(["False"])]
-            cas_1 = cas[~cas["Prediction"].isin(["False", "Ambiguous", "Partial"])]
+            cas_1 = cas[
+                ~cas["Prediction"].isin(["False", "Ambiguous", "Partial"])
+            ]
             crispr = pd.read_csv(self.out + "crisprs_all.tab", sep="\t")
 
             dicts = []
@@ -124,10 +128,14 @@ class CRISPRCas(object):
                     ]
 
                     if len(crispr_circ_start) > 0:
-                        self.cc_circ_start[operon] = list(crispr_circ_start["CRISPR"])
+                        self.cc_circ_start[operon] = list(
+                            crispr_circ_start["CRISPR"]
+                        )
 
                     if len(crispr_circ_end) > 0:
-                        self.cc_circ_end[operon] = list(crispr_circ_end["CRISPR"])
+                        self.cc_circ_end[operon] = list(
+                            crispr_circ_end["CRISPR"]
+                        )
 
                     if len(crispr_operon) > 0:
                         outdict = {
@@ -143,8 +151,12 @@ class CRISPRCas(object):
                                 for x in distances
                                 if x <= self.crispr_cas_dist
                             ],
-                            "Prediction_Cas": list(cas_operon["Prediction"])[0],
-                            "Prediction_CRISPRs": list(crispr_operon["Prediction"]),
+                            "Prediction_Cas": list(cas_operon["Prediction"])[
+                                0
+                            ],
+                            "Prediction_CRISPRs": list(
+                                crispr_operon["Prediction"]
+                            ),
                             "Subtype_Cas": list(cas_operon["Best_type"])[0],
                             "Subtype_CRISPRs": list(crispr_operon["Subtype"]),
                         }
@@ -156,7 +168,9 @@ class CRISPRCas(object):
                 crispr_cas = pd.DataFrame(dicts, columns=dicts[0].keys())
                 self.orphan_cas = cas_1[
                     cas_1["Operon"].isin(
-                        set(cas_1["Operon"]).difference(set(crispr_cas["Operon"]))
+                        set(cas_1["Operon"]).difference(
+                            set(crispr_cas["Operon"])
+                        )
                     )
                 ]
                 self.orphan_crispr = crispr[
@@ -174,7 +188,9 @@ class CRISPRCas(object):
                     ),
                     "Trusted",
                 ] = True
-                crispr.to_csv(self.out + "crisprs_all.tab", sep="\t", index=False)
+                crispr.to_csv(
+                    self.out + "crisprs_all.tab", sep="\t", index=False
+                )
 
                 # Only trusted for the plot
                 self.crisprsall = crispr[crispr["Trusted"]]
@@ -213,7 +229,9 @@ class CRISPRCas(object):
                             elif re.sub("-.*$", "", Prediction_CRISPR) in [
                                 re.sub("-.*$", "", x) for x in Best_Cas
                             ]:
-                                Prediction = re.sub("-.*$", "", Prediction_CRISPR)
+                                Prediction = re.sub(
+                                    "-.*$", "", Prediction_CRISPR
+                                )
                             else:
                                 Prediction = "Unknown"
                         # If Cas not False or Partial
@@ -228,7 +246,8 @@ class CRISPRCas(object):
                                 "-.*$", "", Prediction_CRISPR
                             ):
                                 Prediction = (
-                                    re.sub("-.*$", "", Prediction_CRISPR) + "(Putative)"
+                                    re.sub("-.*$", "", Prediction_CRISPR)
+                                    + "(Putative)"
                                 )
                             else:
                                 Prediction = "Unknown"
@@ -257,10 +276,14 @@ class CRISPRCas(object):
 
                 # Split CRISPR-Cas in putative and good
                 crispr_cas_good = self.crispr_cas[
-                    ~self.crispr_cas["Prediction"].str.contains("Unknown|Putative")
+                    ~self.crispr_cas["Prediction"].str.contains(
+                        "Unknown|Putative"
+                    )
                 ]
                 crispr_cas_put = self.crispr_cas[
-                    self.crispr_cas["Prediction"].str.contains("Unknown|Putative")
+                    self.crispr_cas["Prediction"].str.contains(
+                        "Unknown|Putative"
+                    )
                 ]
 
                 if len(crispr_cas_good) > 0:
@@ -269,26 +292,36 @@ class CRISPRCas(object):
                     )
                 if len(crispr_cas_put) > 0:
                     crispr_cas_put.to_csv(
-                        self.out + "CRISPR_Cas_putative.tab", sep="\t", index=False
+                        self.out + "CRISPR_Cas_putative.tab",
+                        sep="\t",
+                        index=False,
                     )
                 if len(self.orphan_cas) > 0:
                     self.orphan_cas.to_csv(
-                        self.out + "cas_operons_orphan.tab", sep="\t", index=False
+                        self.out + "cas_operons_orphan.tab",
+                        sep="\t",
+                        index=False,
                     )
                 if len(self.orphan_crispr) > 0:
                     # Split orphan CRISPRs in good and putative
-                    crispr_put = self.orphan_crispr[~self.orphan_crispr["Trusted"]]
+                    crispr_put = self.orphan_crispr[
+                        ~self.orphan_crispr["Trusted"]
+                    ]
                     self.orphan_crispr = self.orphan_crispr[
                         self.orphan_crispr["Trusted"]
                     ]
 
                     if len(crispr_put) > 0:
                         crispr_put.to_csv(
-                            self.out + "crisprs_putative.tab", sep="\t", index=False
+                            self.out + "crisprs_putative.tab",
+                            sep="\t",
+                            index=False,
                         )
                     if len(self.orphan_crispr) > 0:
                         self.orphan_crispr.to_csv(
-                            self.out + "crisprs_orphan.tab", sep="\t", index=False
+                            self.out + "crisprs_orphan.tab",
+                            sep="\t",
+                            index=False,
                         )
 
             else:
@@ -299,7 +332,9 @@ class CRISPRCas(object):
 
                 if len(crispr_put) > 0:
                     crispr_put.to_csv(
-                        self.out + "crisprs_putative.tab", sep="\t", index=False
+                        self.out + "crisprs_putative.tab",
+                        sep="\t",
+                        index=False,
                     )
                 if len(crispr) > 0:
                     crispr.to_csv(

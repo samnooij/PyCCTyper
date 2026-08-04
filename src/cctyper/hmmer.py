@@ -33,7 +33,7 @@ class HMMER(object):
         # Parse
         self.parse_hmm()
 
-    # Run pyHMMER and parse required information
+    # Run PyHMMER and parse required information
     def hmmsearch(self, progress=bool):
 
         hmms = []
@@ -74,7 +74,9 @@ class HMMER(object):
 
         result_list = []
 
-        with pyhmmer.easel.SequenceFile(self.prot_path, digital=True) as seqs_file:
+        with pyhmmer.easel.SequenceFile(
+            self.prot_path, digital=True
+        ) as seqs_file:
             sequences = seqs_file.read_block()
 
         def collect_results(hits):
@@ -129,7 +131,9 @@ class HMMER(object):
                                 ali_end,
                                 env_start,
                                 env_end,
-                                hit.domains[i].alignment.posterior_probabilities,
+                                hit.domains[
+                                    i
+                                ].alignment.posterior_probabilities,
                                 hit.description,
                             )
                         )
@@ -141,7 +145,9 @@ class HMMER(object):
             ):
                 collect_results(hits=hits)
         else:
-            for hits in pyhmmer.hmmer.hmmsearch(hmms, sequences, cpus=self.threads):
+            for hits in pyhmmer.hmmer.hmmsearch(
+                hmms, sequences, cpus=self.threads
+            ):
                 collect_results(hits=hits)
 
         result_df = pd.DataFrame(result_list, columns=Result._fields)
@@ -151,7 +157,7 @@ class HMMER(object):
     # Parallel search of all HMMs
     def run_hmm(self):
 
-        logging.info("Running pyHMMER against Cas profiles")
+        logging.info("Running PyHMMER against Cas profiles")
 
         # Make dir
         os.mkdir(self.out + "hmmer")
@@ -161,7 +167,7 @@ class HMMER(object):
         else:
             hmm_df = self.hmmsearch(progress=True)
 
-        logging.info("Write pyHMMER output to file")
+        logging.info("Write PyHMMER output to file")
         hmm_df.to_csv(
             os.path.join(self.out + "hmmer", "Cas_HMMer-like.tab"),
             sep="\t",
@@ -175,7 +181,7 @@ class HMMER(object):
 
         logging.debug("Loading HMMER output")
 
-        # Load relevant columns from pyHMMER output
+        # Load relevant columns from PyHMMER output
         hmm_df = dataframe.loc[
             :,
             [

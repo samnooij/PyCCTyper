@@ -58,7 +58,9 @@ class XGBTrain(object):
     def read_input(self):
 
         # Load input:i
-        self.dat = pd.read_csv(self.input, header=None, sep="\t", names=("Type", "Seq"))
+        self.dat = pd.read_csv(
+            self.input, header=None, sep="\t", names=("Type", "Seq")
+        )
 
         # Check input
         def is_dna(s):
@@ -135,7 +137,8 @@ class XGBTrain(object):
         all_kmer_rev = [x.translate(self.comp_tab)[::-1] for x in all_kmer]
         can_kmer = list(
             it.compress(
-                all_kmer_rev, [not kf < kr for kf, kr in zip(all_kmer, all_kmer_rev)]
+                all_kmer_rev,
+                [not kf < kr for kf, kr in zip(all_kmer, all_kmer_rev)],
             )
         )
         can_kmer.sort()
@@ -151,7 +154,9 @@ class XGBTrain(object):
         ).fillna(0)
         X = X.iloc[1:]
         X["Length"] = [len(x) for x in self.dat["Seq"]]
-        X["GC"] = [(x.count("G") + x.count("C")) / len(x) for x in self.dat["Seq"]]
+        X["GC"] = [
+            (x.count("G") + x.count("C")) / len(x) for x in self.dat["Seq"]
+        ]
 
         y = [self.label_dict[x] for x in self.dat["Type"]]
 
@@ -219,11 +224,20 @@ class XGBTrain(object):
             mean_mlogloss = cv_results["test-mlogloss-mean"].min()
             boost_rounds = cv_results["test-mlogloss-mean"].argmin()
 
-            print("\tmlogloss {} for {} rounds".format(mean_mlogloss, boost_rounds))
+            print(
+                "\tmlogloss {} for {} rounds".format(
+                    mean_mlogloss, boost_rounds
+                )
+            )
 
             if mean_mlogloss < min_mlogloss:
                 min_mlogloss = mean_mlogloss
-                best_params = (max_depth, subsample, colsample_bytree, boost_rounds)
+                best_params = (
+                    max_depth,
+                    subsample,
+                    colsample_bytree,
+                    boost_rounds,
+                )
         print(
             "Best params: {}, {}, {}, mlogloss: {}".format(
                 best_params[0], best_params[1], best_params[2], min_mlogloss
@@ -250,7 +264,9 @@ class XGBTrain(object):
 
     def test(self):
 
-        y_pred = self.model.predict(self.dtest, iteration_range=(0, self.boost_rounds))
+        y_pred = self.model.predict(
+            self.dtest, iteration_range=(0, self.boost_rounds)
+        )
 
         conf = confusion_matrix(self.y_test, [x.argmax() for x in y_pred])
         conf_df = pd.DataFrame(conf, columns=self.incl, index=self.incl)
@@ -270,7 +286,9 @@ class XGBTrain(object):
             label_dict_rev[y] for y in [x.argmax() for x in y_pred]
         ]
         probs_df["Subtype_pred"] = [label_dict_rev[y] for y in self.y_test]
-        probs_df.to_csv(self.out + "probability_test.tab", sep="\t", index=False)
+        probs_df.to_csv(
+            self.out + "probability_test.tab", sep="\t", index=False
+        )
 
         type_acc = np.diag(conf_df) / conf_df.sum(axis=1)
 

@@ -57,7 +57,9 @@ class Prodigal(object):
     def get_genes(self):
 
         with open(self.out + "genes.tab", "w") as gene_tab:
-            subprocess.run(["grep", "^>", self.out + "proteins.faa"], stdout=gene_tab)
+            subprocess.run(
+                ["grep", "^>", self.out + "proteins.faa"], stdout=gene_tab
+            )
 
         genes = pd.read_csv(
             self.out + "genes.tab",

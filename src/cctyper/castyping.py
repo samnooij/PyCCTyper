@@ -25,7 +25,9 @@ class Typer(object):
         logging.debug("Typing operon " + operon)
 
         # Extract only the operon of interest
-        tmp = self.hmm_df_all[self.hmm_df_all["operon"] == operon].sort_values("Pos")
+        tmp = self.hmm_df_all[self.hmm_df_all["operon"] == operon].sort_values(
+            "Pos"
+        )
 
         # If there are duplicates, keep the highest score only
         tmpX = tmp.sort_values("score", ascending=False)
@@ -60,7 +62,8 @@ class Typer(object):
                         prediction = "Ambiguous"
                         best_type = list(
                             type_scores.index.values[
-                                type_scores.values == np.amax(type_scores.values)
+                                type_scores.values
+                                == np.amax(type_scores.values)
                             ]
                         )
                     else:
@@ -126,7 +129,9 @@ class Typer(object):
                 # If best type is not single effector
                 elif best_type not in self.single_effector:
                     prediction = "Ambiguous"
-                    best_type = list(type_scores.index.values[type_scores.values > 0])
+                    best_type = list(
+                        type_scores.index.values[type_scores.values > 0]
+                    )
                 # If no ties
                 else:
                     prediction = best_type
@@ -157,7 +162,12 @@ class Typer(object):
                                     for i in mandatory_genes
                                     if any(
                                         [
-                                            any([x in k for k in list(tmp["Hmm"])])
+                                            any(
+                                                [
+                                                    x in k
+                                                    for k in list(tmp["Hmm"])
+                                                ]
+                                            )
                                             for x in i
                                         ]
                                     )
@@ -183,7 +193,12 @@ class Typer(object):
                                     for i in mandatory_genes
                                     if any(
                                         [
-                                            any([x in k for k in list(tmp["Hmm"])])
+                                            any(
+                                                [
+                                                    x in k
+                                                    for k in list(tmp["Hmm"])
+                                                ]
+                                            )
                                             for x in i
                                         ]
                                     )
@@ -206,14 +221,22 @@ class Typer(object):
         interf_genes = list(
             chain.from_iterable(
                 chain.from_iterable(
-                    [v for k, v in self.compl_interf.items() if k in best_type_list]
+                    [
+                        v
+                        for k, v in self.compl_interf.items()
+                        if k in best_type_list
+                    ]
                 )
             )
         )
         adapt_genes = list(
             chain.from_iterable(
                 chain.from_iterable(
-                    [v for k, v in self.compl_adapt.items() if k in best_type_list]
+                    [
+                        v
+                        for k, v in self.compl_adapt.items()
+                        if k in best_type_list
+                    ]
                 )
             )
         )
@@ -304,7 +327,9 @@ class Typer(object):
         # Resolve circular
         is_circ = False
         if self.circular:
-            if any(clust[len(clust) - dist - 1 :] > 0) and any(clust[: dist + 1] > 0):
+            if any(clust[len(clust) - dist - 1 :] > 0) and any(
+                clust[: dist + 1] > 0
+            ):
                 last_num = clust[len(clust) - dist - 1 :][
                     clust[len(clust) - dist - 1 :] > 0
                 ][0]
@@ -314,7 +339,10 @@ class Typer(object):
                     is_circ = True
         # Extract cluster id for each gene
         return [
-            [list(data["Acc"])[0] + "@" + str(clust[x - 1]) for x in positions],
+            [
+                list(data["Acc"])[0] + "@" + str(clust[x - 1])
+                for x in positions
+            ],
             is_circ,
         ]
 
@@ -333,7 +361,9 @@ class Typer(object):
             specifics = []
             for key, value in self.cutoffs.items():
                 which_sub = [
-                    i for i in list(self.hmm_df["Hmm"]) if key.lower() in i.lower()
+                    i
+                    for i in list(self.hmm_df["Hmm"])
+                    if key.lower() in i.lower()
                 ]
                 if len(which_sub) > 0:
                     specifics.extend(which_sub)
@@ -428,16 +458,24 @@ class Typer(object):
             ]
 
             if len(operons_good) > 0:
-                operons_good.to_csv(self.out + "cas_operons.tab", sep="\t", index=False)
+                operons_good.to_csv(
+                    self.out + "cas_operons.tab", sep="\t", index=False
+                )
             if len(operons_put) > 0:
                 operons_put.to_csv(
-                    self.out + "cas_operons_putative.tab", sep="\t", index=False
+                    self.out + "cas_operons_putative.tab",
+                    sep="\t",
+                    index=False,
                 )
 
             if not self.skip_blast:
                 # Get positions of Cas
                 cas_positions = list(
-                    zip(self.preddf["Contig"], self.preddf["Start"], self.preddf["End"])
+                    zip(
+                        self.preddf["Contig"],
+                        self.preddf["Start"],
+                        self.preddf["End"],
+                    )
                 )
 
                 self.flank_dict = {}
@@ -445,11 +483,16 @@ class Typer(object):
 
                 # For each contig
                 for acc in set([x[0] for x in cas_positions]):
-                    cas_pos = [(x[1], x[2]) for x in cas_positions if x[0] == acc]
+                    cas_pos = [
+                        (x[1], x[2]) for x in cas_positions if x[0] == acc
+                    ]
 
                     # Expand by chosen distance cutoff between CRISPR and cas
                     cas_pos = [
-                        (x[0] - self.crispr_cas_dist, x[1] + self.crispr_cas_dist)
+                        (
+                            x[0] - self.crispr_cas_dist,
+                            x[1] + self.crispr_cas_dist,
+                        )
                         for x in cas_pos
                     ]
                     cas_pos = [x if x[0] > 0 else (1, x[1]) for x in cas_pos]
@@ -464,7 +507,9 @@ class Typer(object):
                                     new_end = ll[i + 1][1]
                                     ll[i] = (new_start, new_end)
                                     del ll[i + 1]
-                                    return recursive_merge(ll.copy(), start_index=i)
+                                    return recursive_merge(
+                                        ll.copy(), start_index=i
+                                    )
                             return ll
 
                         cas_pos_sort = sorted(cas_pos)
@@ -476,9 +521,13 @@ class Typer(object):
                         with open(self.out + "Flank.fna", "a") as handle:
                             handle.write(">" + acc + "-" + str(n) + "\n")
                             handle.write(
-                                str(self.seq_dict[acc][(i[0] - 1) : i[1]]) + "\n"
+                                str(self.seq_dict[acc][(i[0] - 1) : i[1]])
+                                + "\n"
                             )
                             self.flank_dict[acc + "-" + str(n)] = str(
                                 self.seq_dict[acc][(i[0] - 1) : i[1]]
                             )
-                            self.flank_dict_pos[acc + "-" + str(n)] = (i[0], i[1])
+                            self.flank_dict_pos[acc + "-" + str(n)] = (
+                                i[0],
+                                i[1],
+                            )
