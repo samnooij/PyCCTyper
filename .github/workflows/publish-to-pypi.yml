@@ -1,6 +1,12 @@
 name: Publish PyCCTyper to PyPI
 
-on: push
+on:
+  push:
+    branches:
+      - main
+      - 'releases/**'
+    tags:
+      - v1.*
 
 jobs:
   build:
