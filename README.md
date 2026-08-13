@@ -1,5 +1,7 @@
 [![Project Status: Active - The project has reached a stable, usable state and is being actively developed.](http://www.repostatus.org/badges/latest/active.svg)](http://www.repostatus.org/#active)
-[![Conda](https://anaconda.org/russel88/cctyper/badges/installer/conda.svg)](https://anaconda.org/russel88/cctyper) [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![pages-build-deployment](https://samnooij.github.io/PyCCTyper/actions/workflows/pages/pages-build-deployment/badge.svg)]
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 # PyCCTyper
 
@@ -16,11 +18,11 @@ The main tools that are replaced are:
 | HMMer        | [PyHMMER](https://pyhmmer.readthedocs.io/en/stable/)  | ✅              |
 | MinCED       | [Diced](https://diced.readthedocs.io/en/stable/)      | ❌              |
 
-All of these are reimplementations of the original code to run more effeciently.
+These are reimplementations of the original code to run more efficiently.
 They should produce identical output while using less resources.
 (Big thanks to [@althonos](https://github.com/althonos)!)
 
-## Technical details and benchmarks
+## Technical details
 
 The program CCTyper starts by identifying _cas_ genes in your input sequences.
 It does this using Prodigal to predict Open Reading Frames (ORFs), and then
@@ -42,6 +44,10 @@ of hundreds of thousands of bacterial genomes.
 Despite changing the core modules of CCTyper, I want to ensure that the
 **output remains identical**. Therefore, benchmarks will evaluate output
 files as well as runtime and use of computational resources.
+
+![Benchmark of runtime using 1, 4 or 8 CPU threads](docs/benchmark_files/figure-html/fig-total_runtime-1.png "Benchmark result: runtime using 1, 4 or 8 CPU threads. Pyrodigal has a minor effect on runtime, and may make the tool slower depending on the input data. PyHMMER speeds up the process dramatically when using multiple CPU threads.")
+
+See the [documentation]() for more details of the benchmark.
 
 ## Acknowledgements
 
