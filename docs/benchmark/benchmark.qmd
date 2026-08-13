@@ -1,0 +1,246 @@
+---
+title: "Benchmark"
+subtitle: "Computational performance of CCTyper against PyCCTyper"
+
+author:
+  - name: "Sam Nooij"
+    affiliations:
+      - ref: UU-KLIF
+    email: s.nooij [at] uu.nl
+    orcid: 0000-0001-5892-5637
+    corresponding: true
+    degrees:
+      - PhD
+
+affiliations:
+  - id: UU-KLIF
+    name: "Utrecht University 🎓"
+    department: "Faculty of Veterinary Medicine, Department of Clinical Infectiology"
+    address: Yalelaan 1
+    city: Utrecht
+    country: NL
+    postal-code: 3584CL
+    url: https://www.uu.nl/en/organisation/faculty-of-veterinary-medicine
+
+keywords:
+  - CRISPR-Cas
+  - Bioinformatics
+
+date: today
+date-format: iso
+
+title-block-banner: "#f0f3f5"
+title-block-banner-color: "#080808"
+
+css: style.css
+
+format:
+  html:
+    code-fold: true
+    code-summary: "Show the code"
+    df-print: paged
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    embed-resources: false
+    smooth-scroll: true
+    theme:
+      light: sandstone
+      dark: solar
+
+editor:
+  visual:
+    wrap: 72
+  canonical: true
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+library(rmarkdown)
+library(here)
+library(tidyverse)
+library(RColorBrewer)
+library(colorspace)
+```
+
+```{r import_data}
+benchmark_df <- read_csv(
+  file = here("docs", "benchmark", "benchmark_results.csv"),
+  show_col_types = FALSE
+)
+
+benchmark_df$version <- factor(
+  x = benchmark_df$version,
+  levels = c("CCTyper", "Pyrodigal", "PyHMMER")
+)
+```
+
+## Total runtime
+
+```{r}
+#| label: fig-total_runtime
+#| fig-height: 5
+#| fig-width: 8
+
+runtime_figure <- ggplot(
+  data = benchmark_df %>%
+    group_by(version, CPU_threads_used, dataset) %>%
+    summarise(median_runtime = median(runtime_minutes),
+              max_time = max(runtime_minutes),
+              min_time = min(runtime_minutes),
+              .groups = "drop_last"),
+  mapping = aes(x = CPU_threads_used, y = median_runtime)
+) +
+  geom_errorbar(
+    aes(ymin = min_time, ymax = max_time),
+    width = 0.2, colour = "grey60") +
+  geom_line(alpha = 0.6, colour = "grey20") +
+  geom_point(size = 2, colour = "grey20") +
+  
+  facet_grid(dataset ~ version,
+             scales = "free_y") +
+  theme_classic() +
+  labs(
+    x = "CPU threads used",
+    y = "Total runtime (hh:mm:ss)"
+  )
+
+runtime_figure
+```
+
+## Runtime per step
+
+```{r}
+#| label: fig-stepwise_runtime
+#| fig-height: 5
+#| fig-width: 9
+
+runtime_df <- benchmark_df %>%
+  mutate(runtime_remaining = runtime_minutes - (runtime_prodigal + runtime_hmmer)) %>%
+  pivot_longer(cols = starts_with("runtime"),
+               names_prefix = "runtime_",
+               names_to = "runtime")
+
+light_palette <- lighten(
+  brewer.pal(n = 3, name = "Paired"),
+  amount = 0.2
+) %>% desaturate(amount = 0.2)
+
+runtime_stacks <- ggplot(
+  data = runtime_df %>%
+    filter(runtime != "minutes") %>%
+    group_by(version, CPU_threads_used, dataset, runtime) %>%
+    summarise(median_runtime = median(value),
+              .groups = "drop_last"),
+  mapping = aes(x = CPU_threads_used, y = median_runtime, fill = runtime)
+) +
+  geom_area() +
+  scale_fill_manual(values = light_palette) +
+  facet_grid(dataset ~ version,
+             scales = "free_y") +
+  theme_classic() +
+  labs(
+    x = "CPU threads used",
+    y = "Total runtime (hh:mm:ss)"
+  )
+
+runtime_stacks
+```
+
+## CPU usage (%)
+
+```{r}
+#| label: fig-cpu_use
+#| fig-height: 5
+#| fig-width: 8
+
+usage_figure <- ggplot(
+  data = benchmark_df %>%
+    group_by(version, CPU_threads_used, dataset) %>%
+    summarise(median_usage = median(CPU_use_percent, na.rm = TRUE),
+              max_usage = max(CPU_use_percent, na.rm = TRUE),
+              min_usage = min(CPU_use_percent, na.rm = TRUE),
+              .groups = "drop_last"),
+  mapping = aes(x = CPU_threads_used, y = median_usage)
+) +
+  geom_errorbar(
+    aes(ymin = min_usage, ymax = max_usage),
+    width = 0.2, colour = "grey60") +
+  geom_line(alpha = 0.6, colour = "grey20") +
+  geom_point(size = 2, colour = "grey20") +
+  facet_grid(dataset ~ version,
+             scales = "free_y") +
+  theme_classic() +
+  labs(
+    x = "CPU threads used",
+    y = "Mean CPU usage (%)"
+  )
+
+usage_figure
+```
+
+## Iterations per second (HMMER)
+
+```{r}
+#| label: fig-iterations_per_second
+#| fig-height: 5
+#| fig-width: 8
+
+iterations_figure <- ggplot(
+  data = benchmark_df %>%
+    group_by(version, CPU_threads_used, dataset) %>%
+    summarise(median_iterations = median(hmmer_iterations_per_second, na.rm = TRUE),
+              max_iterations = max(hmmer_iterations_per_second, na.rm = TRUE),
+              min_iterations = min(hmmer_iterations_per_second, na.rm = TRUE),
+              .groups = "drop_last"),
+  mapping = aes(x = CPU_threads_used, y = median_iterations)
+) +
+  geom_errorbar(
+    aes(ymin = min_iterations, ymax = max_iterations),
+    width = 0.2, colour = "grey60") +
+  geom_line(alpha = 0.6, colour = "grey20") +
+  geom_point(size = 2, colour = "grey20") +
+  facet_grid(dataset ~ version,
+             scales = "free_y") +
+  theme_classic() +
+  labs(
+    x = "CPU threads used",
+    y = "PyHMMER iterations per second"
+  )
+
+iterations_figure
+```
+
+## Memory use
+
+```{r}
+#| label: fig-memory_use
+#| fig-height: 5
+#| fig-width: 8
+
+memory_figure <- ggplot(
+  data = benchmark_df %>%
+    group_by(version, CPU_threads_used, dataset) %>%
+    summarise(median_memory = median(RAM_max_rss_kbytes),
+              max_memory = max(RAM_max_rss_kbytes),
+              min_memory = min(RAM_max_rss_kbytes),
+              .groups = "drop_last"),
+  mapping = aes(x = CPU_threads_used, y = median_memory)
+) +
+  geom_errorbar(
+    aes(ymin = min_memory, ymax = max_memory),
+    width = 0.2, colour = "grey60") +
+  geom_line(alpha = 0.6, colour = "grey20") +
+  geom_point(size = 2, colour = "grey20") +
+  facet_grid(dataset ~ version,
+             scales = "free_y") +
+  theme_classic() +
+  labs(
+    x = "CPU threads used",
+    y = "Maximum RAM used"
+  )
+
+memory_figure
+```
