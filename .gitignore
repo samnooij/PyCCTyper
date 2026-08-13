@@ -5,6 +5,7 @@
 !/data
 /data/*/
 !/docs
+!/.github
 !/img
 !/src
 /src/*egg-info
@@ -15,3 +16,4 @@
 !CHANGELOG.md
 !LICENSE
 !README.md
+!zensical.toml
