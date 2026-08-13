@@ -33,7 +33,7 @@ class HMMER(object):
         # Parse
         self.parse_hmm()
 
-    # Run pyHMMER and parse required information
+    # Run PyHMMER and parse required information
     def hmmsearch(self, progress=bool):
 
         hmms = []
@@ -157,7 +157,7 @@ class HMMER(object):
     # Parallel search of all HMMs
     def run_hmm(self):
 
-        logging.info("Running pyHMMER against Cas profiles")
+        logging.info("Running PyHMMER against Cas profiles")
 
         # Make dir
         os.mkdir(self.out + "hmmer")
@@ -167,7 +167,7 @@ class HMMER(object):
         else:
             hmm_df = self.hmmsearch(progress=True)
 
-        logging.info("Write pyHMMER output to file")
+        logging.info("Write PyHMMER output to file")
         hmm_df.to_csv(
             os.path.join(self.out + "hmmer", "Cas_HMMer-like.tab"),
             sep="\t",
@@ -181,7 +181,7 @@ class HMMER(object):
 
         logging.debug("Loading HMMER output")
 
-        # Load relevant columns from pyHMMER output
+        # Load relevant columns from PyHMMER output
         hmm_df = dataframe.loc[
             :,
             [

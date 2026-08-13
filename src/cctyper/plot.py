@@ -3,7 +3,12 @@ import re
 
 import pandas as pd
 
-import drawSvg as draw
+try:
+    # camelCase in version 1.x
+    import drawSvg as draw
+except ModuleNotFoundError:
+    # lowercase from version 2.0
+    import drawsvg as draw
 
 
 class Map(object):
@@ -932,16 +937,7 @@ class Map(object):
                     )
                     self.draw_name(k, pred, i, start, end)
 
-            self.im.saveSvg(self.out + "plot.svg")
             try:
-                self.im.setPixelScale(
-                    int(round(self.im.width / (250 * self.scale)))
-                )
-                self.im.savePng(self.out + "plot.png")
-            except:
-                logging.warning("PNG plot failed. Trying lower resolution")
-                try:
-                    self.im.setPixelScale(3)
-                    self.im.savePng(self.out + "plot.png")
-                except:
-                    logging.warning("PNG plot failed")
+                self.im.saveSvg(self.out + "plot.svg")
+            except AttributeError:
+                self.im.save_svg(self.out + "plot.svg")
