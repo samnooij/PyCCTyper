@@ -2,15 +2,16 @@
 /*
 
 # Except what is useful for the repository
-!/bin
-!/cctyper
 !/data
 /data/*/
+!/docs
 !/img
+!/src
+/src/*egg-info
 !.gitignore
 !build.sh
 !dev_env.yaml
 !pyproject.toml
+!CHANGELOG.md
 !LICENSE
 !README.md
-!setup.py
