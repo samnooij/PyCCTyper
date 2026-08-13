@@ -45,9 +45,15 @@ Despite changing the core modules of CCTyper, I want to ensure that the
 **output remains identical**. Therefore, benchmarks will evaluate output
 files as well as runtime and use of computational resources.
 
-![Benchmark of runtime using 1, 4 or 8 CPU threads](docs/benchmark_files/figure-html/fig-total_runtime-1.png "Benchmark result: runtime using 1, 4 or 8 CPU threads. Pyrodigal has a minor effect on runtime, and may make the tool slower depending on the input data. PyHMMER speeds up the process dramatically when using multiple CPU threads.")
+![Benchmark of runtime using 1, 4 or 8 CPU threads](docs/benchmark/benchmark_files/figure-html/fig-total_runtime-1.png "Benchmark result: runtime using 1, 4 or 8 CPU threads. Pyrodigal has a minor effect on runtime, and may make the tool slower depending on the input data. PyHMMER speeds up the process dramatically when using multiple CPU threads.")
+_**Benchmark of total runtime**._
+_From left to right, different tool variants are displayed as panels: the original CCTyper,_
+_CCTyper with Pyrodigal implemented, and with PyHMMER implemented._
+_Top to bottom shows two different datasets: 100 randomly selected Campylobacter genomes_
+_and 100 randomly selected CRISPR-Cas-containing genomes._
+_Benchmarks were run with 1, 4 and 8 CPU threads._
 
-See the [documentation]() for more details of the benchmark.
+See the [documentation](https://samnooij.github.io/PyCCTyper/benchmark/) for more details of the benchmark.
 
 ## Acknowledgements
 
