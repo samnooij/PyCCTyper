@@ -1,7 +1,7 @@
 [![Project Status: Active - The project has reached a stable, usable state and is being actively developed.](http://www.repostatus.org/badges/latest/active.svg)](http://www.repostatus.org/#active)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-[![pages-build-deployment](https://samnooij.github.io/PyCCTyper/actions/workflows/pages/pages-build-deployment/badge.svg)]
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Documentation](https://github.com/samnooij/PyCCTyper/actions/workflows/docs.yml/badge.svg)](https://samnooij.github.io/PyCCTyper/)
 
 # PyCCTyper
 
